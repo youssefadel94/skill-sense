@@ -15,6 +15,11 @@ export class ExtractionController {
     return this.extractionService.extractFromGitHub(data.userId, data.username);
   }
 
+  @Post('linkedin')
+  async extractFromLinkedIn(@Body() data: { userId: string; profileUrl: string }) {
+    return this.extractionService.extractFromLinkedIn(data.userId, data.profileUrl);
+  }
+
   @Get('job/:jobId')
   async getExtractionJob(@Param('jobId') jobId: string) {
     return this.extractionService.getJobStatus(jobId);
