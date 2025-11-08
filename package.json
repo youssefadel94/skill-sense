@@ -1,0 +1,29 @@
+{
+  "name": "skill-sense",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered skill discovery platform",
+  "workspaces": [
+    "apps/*",
+    "projects/*"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd apps/skill-sense-api && npm install",
+    "build:api": "cd apps/skill-sense-api && npm run build",
+    "build:web": "ng build skill-sense-shell --configuration production",
+    "start:api": "cd apps/skill-sense-api && npm run start:dev",
+    "start:web": "ng serve skill-sense-shell --open",
+    "test:api": "cd apps/skill-sense-api && npm run test",
+    "test:web": "ng test",
+    "deploy:api": "gcloud run deploy skill-sense-api --source apps/skill-sense-api --region us-central1 --allow-unauthenticated",
+    "deploy:web": "ng build skill-sense-shell --configuration production && firebase deploy --only hosting"
+  },
+  "devDependencies": {
+    "@angular/cli": "^17.0.0",
+    "@nestjs/cli": "^10.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["ai", "skills", "vertex-ai", "weaviate"],
+  "author": "",
+  "license": "MIT"
+}

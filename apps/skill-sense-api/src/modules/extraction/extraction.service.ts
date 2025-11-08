@@ -1,0 +1,41 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { JobQueueService, Job } from '../../shared/services/job-queue.service';
+import { CvParserService } from '../connectors/cv/cv-parser.service';
+import { GithubConnectorService } from '../connectors/github/github-connector.service';
+
+@Injectable()
+export class ExtractionService {
+  private readonly logger = new Logger(ExtractionService.name);
+
+  constructor(
+    private readonly jobQueue: JobQueueService,
+    private readonly cvParser: CvParserService,
+    private readonly githubConnector: GithubConnectorService,
+  ) {}
+
+  async extractFromCV(userId: string, fileUrl: string) {
+    this.logger.log(`Starting CV extraction for user: ${userId}`);
+    const jobId = await this.jobQueue.createJob('cv-extraction', {
+      userId,
+      fileUrl,
+    });
+    return { jobId, status: 'queued' };
+  }
+
+  async extractFromGitHub(userId: string, username: string) {
+    this.logger.log(`Starting GitHub extraction for user: ${userId}`);
+    const jobId = await this.jobQueue.createJob('github-extraction', {
+      userId,
+      username,
+    });
+    return { jobId, status: 'queued' };
+  }
+
+  async getJobStatus(jobId: string): Promise<Job | { error: string }> {
+    const job = await this.jobQueue.getJob(jobId);
+    if (!job) {
+      return { error: 'Job not found' };
+    }
+    return job;
+  }
+}
