@@ -881,19 +881,44 @@ export class LearningPathsComponent implements OnInit {
       this.loading = true;
       this.loadingMessage = 'Loading your learning paths...';
 
-      // TODO: Replace with actual API call
-      // this.apiService.getLearningPaths().subscribe({
-      //   next: (paths) => { this.activePaths = paths; },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.loading = false; }
-      // });
+      const userId = await this.authService.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
 
-      await this.delay(800);
-      this.activePaths = this.generateMockPaths();
+      this.apiService.getLearningPaths(userId).subscribe({
+        next: (response) => {
+          this.activePaths = (response.paths || []).map((path: any) => ({
+            id: path.id,
+            title: path.title || path.targetRole,
+            targetRole: path.targetRole || path.title,
+            estimatedDuration: path.estimatedDuration || path.duration || '3 months',
+            difficulty: path.difficulty || 'Intermediate',
+            progress: path.progress || 0,
+            currentPhase: path.currentPhase || 'Foundation',
+            steps: (path.steps || []).map((step: any) => ({
+              id: step.id,
+              title: step.title,
+              description: step.description,
+              type: step.type || 'course',
+              duration: step.duration || '2 weeks',
+              resources: step.resources || [],
+              skills: step.skills || [],
+              completed: step.completed || false
+            })),
+            createdAt: path.createdAt || new Date().toISOString()
+          }));
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to load learning paths:', err);
+          this.error = err.message || 'Failed to load learning paths';
+          this.loading = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to load learning paths';
-    } finally {
       this.loading = false;
     }
   }

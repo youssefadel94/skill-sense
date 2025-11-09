@@ -270,21 +270,33 @@ export class DashboardComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      // TODO: Replace with actual API call once backend is ready
-      // const data = await this.apiService.getDashboardStats();
+      const userId = await this.authService.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
 
-      // Mock data for now
-      await this.delay(1000);
-      this.stats = {
-        totalSkills: 42,
-        profilesAnalyzed: 3,
-        gapsIdentified: 8,
-        confidenceAverage: 87
-      };
+      this.apiService.getProfile(userId).subscribe({
+        next: (profile) => {
+          const skills = profile.skills || [];
+          this.stats = {
+            totalSkills: skills.length,
+            profilesAnalyzed: 1, // Current user profile
+            gapsIdentified: skills.filter((s: any) => s.confidence < 70).length,
+            confidenceAverage: skills.length > 0
+              ? Math.round(skills.reduce((sum: number, s: any) => sum + (s.confidence || 0), 0) / skills.length)
+              : 0
+          };
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to load dashboard data:', err);
+          this.error = err.message || 'Failed to load dashboard data';
+          this.loading = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to load dashboard data';
-    } finally {
       this.loading = false;
     }
   }

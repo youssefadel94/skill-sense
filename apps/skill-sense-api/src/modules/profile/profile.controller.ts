@@ -137,17 +137,17 @@ export class ProfileController {
   @ApiParam({ name: 'cvId', description: 'CV ID' })
   @ApiResponse({ status: 200, description: 'Returns CV file' })
   async downloadCV(@Param('cvId') cvId: string, @Res() res: Response) {
-    const cv = await this.profileService.getCVById(cvId);
+    const cv: any = await this.profileService.getCVById(cvId);
     
     if (!cv) {
       return res.status(404).json({ error: 'CV not found' });
     }
 
     // Mock file download - in production, this would return the actual file
-    const content = `# CV - ${cv.template}\n\nGenerated on ${cv.generatedAt}\n\n...CV Content...`;
+    const content = `# CV - ${cv.template || 'Default'}\n\nGenerated on ${cv.generatedAt || new Date().toISOString()}\n\n...CV Content...`;
     
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="cv-${cvId}.${cv.format}"`);
+    res.setHeader('Content-Disposition', `attachment; filename="cv-${cvId}.${cv.format || 'pdf'}"`);
     return res.send(Buffer.from(content));
   }
 
