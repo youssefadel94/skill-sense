@@ -277,6 +277,19 @@ export class DashboardComponent implements OnInit {
 
       this.apiService.getProfile(userId).subscribe({
         next: (profile) => {
+          // Handle null or missing profile gracefully
+          if (!profile) {
+            console.warn('No profile found for user, using default values');
+            this.stats = {
+              totalSkills: 0,
+              profilesAnalyzed: 0,
+              gapsIdentified: 0,
+              confidenceAverage: 0
+            };
+            this.loading = false;
+            return;
+          }
+
           const skills = profile.skills || [];
           this.stats = {
             totalSkills: skills.length,

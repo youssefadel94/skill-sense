@@ -30,7 +30,28 @@ export class AuthService {
       const credential = await signInWithEmailAndPassword(this.auth, email, password);
       return credential.user;
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('Firebase login error:', error);
+
+      // Provide user-friendly error messages
+      let errorMessage = 'Login failed. Please try again.';
+
+      if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled.';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password.';
+      } else if (error.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      throw new Error(errorMessage);
     }
   }
 
