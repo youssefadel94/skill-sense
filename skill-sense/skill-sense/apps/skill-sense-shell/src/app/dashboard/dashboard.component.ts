@@ -202,9 +202,6 @@ interface DashboardStats {
               <h2>🤝 Similar Profiles for Networking</h2>
               <p class="text-subtle">Connect with professionals who share similar skills and interests</p>
             </div>
-            <button (click)="loadSimilarProfiles()" [disabled]="loadingProfiles" class="btn btn-secondary">
-              {{ loadingProfiles ? 'Loading...' : 'Find Connections' }}
-            </button>
           </header>
 
           @if (loadingProfiles) {
@@ -902,6 +899,7 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     this.loadDashboardData();
+    this.loadSimilarProfiles(); // Auto-load similar profiles on dashboard init
   }
 
   async loadDashboardData() {

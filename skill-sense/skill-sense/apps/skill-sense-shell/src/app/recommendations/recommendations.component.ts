@@ -115,8 +115,8 @@ interface Resource {
               <div class="metrics">
                 <div class="metric">
                   <span class="label">Demand:</span>
-                  <span class="badge demand" [class]="rec.demandLevel">
-                    {{ rec.demandLevel.toUpperCase() }}
+                  <span class="badge demand" [class]="rec.demandLevel || 'medium'">
+                    {{ (rec.demandLevel || 'medium').toUpperCase() }}
                   </span>
                 </div>
                 @if (rec.avgSalaryImpact) {

@@ -2,13 +2,17 @@ import { Controller, Get, Post, Put, Body, Param, Delete, Query, Res, NotFoundEx
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ProfileService } from './profile.service';
+import { VectorSearchService } from '../search/vector-search.service';
 import { CreateProfileDto } from './dto/profile.dto';
 import { GenerateCVDto, MatchRolesDto, GenerateLearningPathDto, UpdateLearningPathProgressDto } from './dto/advanced.dto';
 
 @ApiTags('profiles')
 @Controller('profiles')
 export class ProfileController {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(
+    private readonly profileService: ProfileService,
+    private readonly vectorSearchService: VectorSearchService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new user profile' })
@@ -94,15 +98,18 @@ export class ProfileController {
   }
 
   @Get(':id/similar-profiles')
-  @ApiOperation({ summary: 'Find similar profiles for networking using vector similarity' })
-  @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Max results (default: 10)' })
-  @ApiResponse({ status: 200, description: 'Returns similar user profiles based on skills and experience' })
+  @ApiOperation({ summary: 'Find users with similar skill sets' })
+  @ApiParam({ name: 'id', description: 'User ID to find similar profiles for' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Maximum results (default: 10)' })
+  @ApiResponse({ status: 200, description: 'Returns similar user profiles' })
   async findSimilarProfiles(
     @Param('id') userId: string,
-    @Query('limit') limit: number = 10,
+    @Query('limit') limit?: string,
   ) {
-    return this.profileService.findSimilarProfiles(userId, limit);
+    return this.vectorSearchService.findSimilarProfiles(
+      userId,
+      limit ? parseInt(limit) : 10,
+    );
   }
 
   @Get(':id/export')

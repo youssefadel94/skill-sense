@@ -5,5 +5,6 @@ import { VectorSearchService } from './vector-search.service';
 @Module({
   controllers: [SearchController],
   providers: [VectorSearchService],
+  exports: [VectorSearchService], // Export for use in other modules
 })
 export class SearchModule {}
