@@ -19,11 +19,21 @@
     "deploy:web": "ng build skill-sense-shell --configuration production && firebase deploy --only hosting"
   },
   "devDependencies": {
-    "@angular/cli": "^17.0.0",
-    "@nestjs/cli": "^10.0.0",
+    "@angular/cli": "^20.3.0",
+    "@nestjs/cli": "^11.0.1",
     "typescript": "^5.0.0"
   },
-  "keywords": ["ai", "skills", "vertex-ai", "weaviate"],
+  "keywords": [
+    "ai",
+    "skills",
+    "vertex-ai",
+    "weaviate"
+  ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@angular/fire": "^20.0.1",
+    "chart.js": "^4.5.1",
+    "firebase": "^11.10.0"
+  }
 }
