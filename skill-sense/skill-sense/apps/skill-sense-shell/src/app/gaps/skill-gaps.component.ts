@@ -437,29 +437,50 @@ export class SkillGapsComponent implements OnInit {
         return;
       }
 
+      console.log('[GAPS] Starting skill gap analysis for:', this.targetRole);
+      console.log('[GAPS] User ID:', userId);
+
       this.apiService.analyzeSkillGaps(userId, this.targetRole).subscribe({
         next: (response) => {
-          this.gaps = (response.missingSkills || []).map((skillName: string, index: number) => ({
-            skill: skillName,
-            priority: response.priorities?.[index] || 'medium',
-            impact: response.impacts?.[index] || 'medium',
-            learningTime: response.learningTimes?.[index] || '2-4 weeks',
-            resources: response.resources?.[skillName] || []
+          console.log('[GAPS] ✓ Received response:', response);
+
+          // Map the response.gaps array to our SkillGap interface
+          this.gaps = (response.gaps || []).map((gap: any) => ({
+            skill: gap.skill,
+            category: gap.category || 'Other',
+            priority: this.mapPriority(gap.priority),
+            estimatedLearningTime: gap.timeToAcquire || gap.estimatedLearningTime || 'Unknown',
+            resources: gap.resources || []
           }));
+
+          console.log('[GAPS] ✓ Mapped gaps:', this.gaps.length);
           this.filterGaps();
           this.loading = false;
         },
         error: (err) => {
-          console.error('Skill gaps analysis failed:', err);
-          this.error = err.message || 'Failed to analyze skill gaps';
+          console.error('[GAPS] ✗ Skill gaps analysis failed:', err);
+          console.error('[GAPS] Error details:', {
+            message: err.message,
+            status: err.status,
+            error: err.error
+          });
+          this.error = err.error?.message || err.message || 'Failed to analyze skill gaps. Please try again.';
           this.loading = false;
         }
       });
 
     } catch (err: any) {
+      console.error('[GAPS] ✗ Exception in analyzeGaps:', err);
       this.error = err.message || 'Failed to analyze skill gaps';
       this.loading = false;
     }
+  }
+
+  mapPriority(priority: string): 'high' | 'medium' | 'low' {
+    const p = (priority || 'medium').toLowerCase();
+    if (p === 'critical' || p === 'high') return 'high';
+    if (p === 'low') return 'low';
+    return 'medium';
   }
 
   filterGaps() {

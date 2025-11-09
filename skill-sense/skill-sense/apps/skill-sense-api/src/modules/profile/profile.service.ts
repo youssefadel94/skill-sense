@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { FirestoreService } from '../../shared/services/firestore.service';
 import { VertexAIService } from '../../shared/services/vertex-ai.service';
 import { GcsService } from '../../shared/services/gcs.service';
@@ -70,32 +70,55 @@ export class ProfileService {
   async analyzeSkillGaps(userId: string, targetRole: string) {
     this.logger.log(`Analyzing skill gaps for ${userId} targeting ${targetRole}`);
 
-    // Get user's profile
-    const profile: any = await this.getProfile(userId);
-    if (!profile) {
-      throw new Error('Profile not found');
+    try {
+      // Get user's profile
+      const profile: any = await this.getProfile(userId);
+      if (!profile) {
+        this.logger.error(`Profile not found for user: ${userId}`);
+        throw new Error('Profile not found');
+      }
+
+      this.logger.debug(`Profile found: ${profile.name || 'Unknown'}`);
+
+      // Extract skill names from profile
+      const currentSkills = profile.skills?.map(s => s.name || s) || [];
+      this.logger.debug(`Current skills count: ${currentSkills.length}`);
+
+      if (currentSkills.length === 0) {
+        this.logger.warn('No skills found in profile, returning empty analysis');
+        return {
+          userId,
+          targetRole,
+          currentSkills: [],
+          gaps: [],
+          summary: 'No skills found in your profile. Please upload a CV first.'
+        };
+      }
+
+      // Analyze using Vertex AI
+      this.logger.debug('Calling Vertex AI for analysis...');
+      const analysis = await this.vertexAI.analyzeSkillGaps(currentSkills, targetRole);
+      this.logger.log(`✓ Analysis complete: ${analysis.gaps?.length || 0} gaps found`);
+
+      // Save analysis for future reference
+      await this.firestore.createDocument('skill-gap-analyses', {
+        userId,
+        targetRole,
+        ...analysis,
+        createdAt: new Date().toISOString(),
+      });
+
+      return {
+        userId,
+        targetRole,
+        currentSkills,
+        ...analysis,
+      };
+    } catch (error) {
+      this.logger.error(`Skill gap analysis failed: ${error.message}`);
+      this.logger.error(`Error stack: ${error.stack}`);
+      throw error;
     }
-
-    // Extract skill names from profile
-    const currentSkills = profile.skills?.map(s => s.name || s) || [];
-
-    // Analyze using Vertex AI
-    const analysis = await this.vertexAI.analyzeSkillGaps(currentSkills, targetRole);
-
-    // Save analysis for future reference
-    await this.firestore.createDocument('skill-gap-analyses', {
-      userId,
-      targetRole,
-      ...analysis,
-      createdAt: new Date().toISOString(),
-    });
-
-    return {
-      userId,
-      targetRole,
-      currentSkills,
-      ...analysis,
-    };
   }
 
   async getSkillRecommendations(userId: string, targetRole?: string) {
@@ -428,23 +451,34 @@ export class ProfileService {
       throw new Error('Profile not found');
     }
 
+    const targetGoal = dto?.targetGoal?.trim();
+    if (!targetGoal) {
+      this.logger.warn('generateLearningPath called without targetGoal');
+      throw new BadRequestException('targetGoal is required');
+    }
+
+    const learningStyle = dto?.learningStyle ?? 'balanced';
+    const timeCommitment = typeof dto?.timeCommitment === 'number' && dto.timeCommitment > 0
+      ? dto.timeCommitment
+      : 10;
+
     const pathId = `path-${userId}-${Date.now()}`;
 
     // Mock path generation - in production, use AI
     const path = {
       id: pathId,
       userId,
-      title: `Path to ${dto.targetGoal}`,
-      targetGoal: dto.targetGoal,
-      learningStyle: dto.learningStyle,
-      timeCommitment: dto.timeCommitment,
+      title: `Path to ${targetGoal}`,
+      targetGoal,
+      learningStyle,
+      timeCommitment,
       progress: 0,
       createdAt: new Date().toISOString(),
       steps: [
         {
           id: 'step-1',
           title: 'Foundation Concepts',
-          description: `Learn the basics of ${dto.targetGoal}`,
+          description: `Learn the basics of ${targetGoal}`,
           duration: '8 hours',
           completed: false,
           resources: [

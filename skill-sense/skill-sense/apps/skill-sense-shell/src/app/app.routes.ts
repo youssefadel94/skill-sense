@@ -4,6 +4,7 @@ import { RegisterComponent } from './auth/register.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ProfileComponent } from './profile/profile.component';
 import { UploadComponent } from './upload/upload.component';
+import { IntegrationsComponent } from './integrations/integrations.component';
 import { SkillGapsComponent } from './gaps/skill-gaps.component';
 import { RecommendationsComponent } from './recommendations/recommendations.component';
 import { TrendsComponent } from './trends/trends.component';
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'upload', component: UploadComponent, canActivate: [authGuard] },
+  { path: 'integrations', component: IntegrationsComponent, canActivate: [authGuard] },
   { path: 'gaps', component: SkillGapsComponent, canActivate: [authGuard] },
   { path: 'recommendations', component: RecommendationsComponent, canActivate: [authGuard] },
   { path: 'trends', component: TrendsComponent, canActivate: [authGuard] },

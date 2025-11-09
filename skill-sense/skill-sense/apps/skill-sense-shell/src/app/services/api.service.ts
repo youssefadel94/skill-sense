@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, from, switchMap, catchError, throwError, map, shareReplay, tap } from 'rxjs';
+import { Observable, from, switchMap, catchError, throwError, map, shareReplay, tap, timeout } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -148,8 +148,21 @@ export class ApiService {
 
   // Skill analysis endpoints
   analyzeSkillGaps(userId: string, targetRole: string): Observable<any> {
+    console.log('[API] Requesting skill gap analysis...');
     return this.getAuthHeaders().pipe(
-      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/skill-gaps?targetRole=${encodeURIComponent(targetRole)}`, { headers })
+      switchMap((headers) =>
+        this.http.get(`${this.apiUrl}/profiles/${userId}/skill-gaps?targetRole=${encodeURIComponent(targetRole)}`, { headers })
+          .pipe(
+            timeout(120000), // 2 minute timeout for AI analysis
+            tap(response => console.log('[API] ✓ Skill gap analysis complete:', response)),
+            catchError(err => {
+              console.error('[API] ✗ Skill gap analysis failed:', err);
+              if (err.name === 'TimeoutError') {
+                return throwError(() => new Error('Analysis is taking too long. Please try again.'));
+              }
+              return throwError(() => err);
+            })
+          )
       )
     );
   }

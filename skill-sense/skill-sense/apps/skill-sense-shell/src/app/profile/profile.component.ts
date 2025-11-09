@@ -215,8 +215,8 @@ interface ProfileOverview {
 
     .profile-screen {
       display: grid;
-      gap: 28px;
-      padding: 12px 0 60px;
+      gap: 32px;
+      padding: 16px 0 80px;
     }
 
     .profile-top {
@@ -226,9 +226,9 @@ interface ProfileOverview {
 
     .profile-loading {
       display: flex;
-      gap: 26px;
+      gap: 28px;
       align-items: center;
-      padding: 40px;
+      padding: 48px;
       border-radius: var(--radius-lg);
     }
 
@@ -236,22 +236,20 @@ interface ProfileOverview {
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      border: 4px solid rgba(148, 163, 184, 0.18);
-      border-top-color: rgba(99, 102, 241, 0.75);
-      animation: spin 1s linear infinite;
+      border: 4px solid rgba(99, 102, 241, 0.12);
+      border-top-color: var(--color-primary);
+      animation: spin 0.8s linear infinite;
     }
 
     @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
+      to { transform: rotate(360deg); }
     }
 
     .loading-copy {
       display: grid;
-      gap: 12px;
+      gap: 14px;
       width: 100%;
-      max-width: 320px;
+      max-width: 340px;
     }
 
     .profile-alert {
@@ -261,8 +259,8 @@ interface ProfileOverview {
     .profile-hero {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
-      gap: 32px;
-      padding: 44px 48px;
+      gap: 40px;
+      padding: 48px 56px;
       position: relative;
       overflow: hidden;
     }
@@ -270,42 +268,51 @@ interface ProfileOverview {
     .profile-hero::after {
       content: '';
       position: absolute;
-      width: 280px;
-      height: 280px;
-      right: -40px;
-      bottom: -60px;
-      background: radial-gradient(circle, rgba(6, 182, 212, 0.18) 0, rgba(6, 182, 212, 0));
-      filter: blur(10px);
+      width: 400px;
+      height: 400px;
+      right: -100px;
+      bottom: -100px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+      filter: blur(60px);
+      pointer-events: none;
     }
 
     .profile-hero__content {
       position: relative;
       z-index: 1;
       display: grid;
-      gap: 16px;
+      gap: 18px;
     }
 
     .profile-hero__content h1 {
       margin: 0;
-      font-size: clamp(2rem, 2.4vw, 2.6rem);
+      font-size: clamp(2.25rem, 3vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--color-text-strong) 0%, var(--color-text) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .profile-hero__email {
       margin: 0;
       color: var(--color-text-muted);
-      font-size: 1rem;
+      font-size: 1.0625rem;
+      font-weight: 500;
     }
 
     .profile-hero__chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
+      margin-top: 6px;
     }
 
     .profile-hero__actions {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       align-items: flex-end;
       justify-content: center;
     }
@@ -313,89 +320,112 @@ interface ProfileOverview {
     .cvs-section,
     .skills-section {
       display: grid;
-      gap: 24px;
+      gap: 28px;
     }
 
     .section-header {
       display: flex;
       justify-content: space-between;
-      gap: 18px;
+      gap: 20px;
       flex-wrap: wrap;
       align-items: flex-start;
     }
 
     .section-header h2 {
       margin: 0;
-      font-size: 1.6rem;
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--color-text-strong);
     }
 
     .section-header p {
-      margin: 6px 0 0;
+      margin: 8px 0 0;
+      color: var(--color-text-muted);
+      font-size: 0.9375rem;
     }
 
     .cvs-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
     }
 
     .cv-card {
       position: relative;
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 18px;
-      padding: 24px;
-      border-radius: var(--radius);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: rgba(15, 23, 42, 0.62);
+      gap: 20px;
+      padding: 26px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-strong);
+      background: var(--color-surface-alt);
       overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .cv-card:hover {
+      border-color: rgba(99, 102, 241, 0.35);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg), var(--shadow-glow);
     }
 
     .cv-card::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.22), transparent 55%);
-      opacity: 0.85;
+      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
       pointer-events: none;
     }
 
+    .cv-card:hover::after {
+      opacity: 1;
+    }
+
     .cv-card__icon {
-      font-size: 34px;
+      font-size: 36px;
       z-index: 1;
       align-self: center;
+      filter: grayscale(0.2) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
     }
 
     .cv-card__body {
       z-index: 1;
       display: grid;
-      gap: 12px;
+      gap: 14px;
       min-width: 0;
     }
 
     .cv-card__header {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
+      gap: 14px;
       align-items: flex-start;
       flex-wrap: wrap;
     }
 
     .cv-card__header h3 {
       margin: 0;
-      font-size: 1.05rem;
-      font-weight: 600;
-      max-width: 240px;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--color-text-strong);
+      max-width: 260px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      letter-spacing: -0.01em;
     }
 
     .chip {
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: rgba(148, 163, 184, 0.16);
-      font-size: 0.75rem;
+      padding: 5px 14px;
+      border-radius: 6px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: var(--color-primary-light);
+      font-size: 0.6875rem;
+      font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
@@ -403,188 +433,263 @@ interface ProfileOverview {
     .cv-card__meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px 18px;
+      gap: 14px 20px;
       color: var(--color-text-muted);
-      font-size: 0.85rem;
+      font-size: 0.875rem;
+      font-weight: 500;
     }
 
     .meta-item {
       display: inline-flex;
-      gap: 6px;
+      gap: 7px;
       align-items: center;
     }
 
     .meta-icon {
-      font-size: 0.9rem;
+      font-size: 0.9375rem;
     }
 
     .cv-card__actions {
       z-index: 1;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 11px;
       align-items: center;
     }
 
     .btn-icon {
-      background: rgba(148, 163, 184, 0.16);
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      border-radius: 12px;
-      width: 40px;
-      height: 40px;
+      background: rgba(31, 41, 55, 0.6);
+      border: 1px solid var(--color-border-strong);
+      border-radius: 10px;
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       color: var(--color-text);
-      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+      font-size: 1.125rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-icon::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent);
+      opacity: 0;
+      transition: opacity 0.25s ease;
     }
 
     .btn-icon:hover {
-      transform: translateY(-2px);
-      background: rgba(148, 163, 184, 0.24);
+      transform: translateY(-3px) scale(1.05);
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 6px 16px -4px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-icon:hover::before {
+      opacity: 1;
+    }
+
+    .btn-icon:active {
+      transform: translateY(-1px) scale(1.02);
     }
 
     .btn-icon:disabled {
-      opacity: 0.6;
+      opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
     }
 
     .btn-danger {
-      border-color: rgba(239, 68, 68, 0.32);
-      background: rgba(239, 68, 68, 0.16);
+      border-color: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.1);
     }
 
     .btn-danger:hover {
-      background: rgba(239, 68, 68, 0.22);
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.45);
+      box-shadow: 0 6px 16px -4px rgba(239, 68, 68, 0.35);
     }
 
     .spinner-small {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      border: 3px solid rgba(148, 163, 184, 0.18);
-      border-top-color: rgba(99, 102, 241, 0.75);
-      animation: spin 0.9s linear infinite;
+      border: 3px solid rgba(99, 102, 241, 0.15);
+      border-top-color: var(--color-primary);
+      animation: spin 0.7s linear infinite;
     }
 
     .filters {
       display: grid;
-      gap: 8px;
-      min-width: 200px;
+      gap: 10px;
+      min-width: 220px;
     }
 
     .empty-state {
       text-align: center;
-      padding: 48px 24px;
-      border: 1px dashed rgba(148, 163, 184, 0.28);
-      border-radius: var(--radius);
-      background: rgba(15, 23, 42, 0.45);
+      padding: 56px 28px;
+      border: 2px dashed var(--color-border-strong);
+      border-radius: var(--radius-md);
+      background: rgba(17, 24, 39, 0.4);
       display: grid;
-      gap: 12px;
+      gap: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .empty-state:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      background: rgba(17, 24, 39, 0.6);
     }
 
     .empty-state h3 {
       margin: 0;
-      font-size: 1.3rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text-strong);
+      letter-spacing: -0.01em;
     }
 
     .empty-state p {
       margin: 0;
       color: var(--color-text-muted);
+      font-size: 1rem;
     }
 
     .skills-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
     }
 
     .skill-card {
       position: relative;
-      padding: 22px;
-      border-radius: var(--radius);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      background: rgba(15, 23, 42, 0.62);
+      padding: 24px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-strong);
+      background: var(--color-surface-alt);
       display: grid;
-      gap: 14px;
-      transition: border-color 0.2s ease, transform 0.2s ease;
+      gap: 16px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .skill-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
     }
 
     .skill-card:hover {
-      border-color: rgba(99, 102, 241, 0.45);
-      transform: translateY(-2px);
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg), var(--shadow-glow);
+    }
+
+    .skill-card:hover::before {
+      transform: scaleX(1);
     }
 
     .skill-card.verified {
-      border-color: rgba(34, 197, 94, 0.38);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .skill-card.verified::before {
+      background: linear-gradient(90deg, var(--color-positive), var(--color-positive-light));
     }
 
     .skill-card__header {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
+      gap: 14px;
       align-items: flex-start;
     }
 
     .skill-card__header h3 {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 1.1875rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--color-text-strong);
     }
 
     .skill-card__category {
       margin: 0;
       color: var(--color-text-muted);
-      font-size: 0.9rem;
+      font-size: 0.9375rem;
+      font-weight: 600;
     }
 
     .skill-card__stats {
       display: grid;
-      gap: 12px;
+      gap: 14px;
     }
 
     .skill-stat {
       display: grid;
-      gap: 6px;
+      gap: 8px;
     }
 
     .skill-stat__label {
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--color-text-subtle);
     }
 
     .skill-stat__value {
-      font-weight: 600;
-      font-size: 0.96rem;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--color-text-strong);
     }
 
     .confidence {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       align-items: center;
     }
 
     .confidence__bar {
       flex: 1;
-      height: 10px;
+      height: 8px;
       border-radius: 999px;
-      background: rgba(148, 163, 184, 0.18);
+      background: rgba(99, 102, 241, 0.12);
       overflow: hidden;
+      position: relative;
+    }
+
+    .confidence__bar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), transparent);
     }
 
     .confidence__fill {
       height: 100%;
-      background: linear-gradient(120deg, rgba(99, 102, 241, 0.8), rgba(129, 140, 248, 0.95));
+      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
       border-radius: 999px;
-      transition: width 0.4s ease;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
     }
 
     @media (max-width: 960px) {
       .profile-hero {
         grid-template-columns: 1fr;
-        padding: 36px;
+        padding: 40px;
       }
 
       .profile-hero__actions {
@@ -605,11 +710,15 @@ interface ProfileOverview {
 
     @media (max-width: 640px) {
       .profile-screen {
-        gap: 22px;
+        gap: 24px;
       }
 
       .profile-hero {
-        padding: 28px;
+        padding: 32px 24px;
+      }
+
+      .profile-hero__content h1 {
+        font-size: 2rem;
       }
 
       .profile-hero__actions {
@@ -624,24 +733,33 @@ interface ProfileOverview {
       .skills-grid {
         grid-template-columns: 1fr;
       }
+
+      .section-header {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .filters {
+        width: 100%;
+      }
     }
 
     .storage-uri {
-      font-family: 'Courier New', monospace;
-      background: #f9fafb;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      color: #666;
-      border: 1px solid #e5e7eb;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      background: rgba(17, 24, 39, 0.8);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.8125rem;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border-strong);
     }
 
     .modal-actions {
       display: flex;
-      gap: 12px;
-      margin-top: 24px;
-      padding-top: 24px;
-      border-top: 1px solid #e5e7eb;
+      gap: 14px;
+      margin-top: 28px;
+      padding-top: 28px;
+      border-top: 1px solid var(--color-border-strong);
     }
 
     .modal-actions .btn {
@@ -649,18 +767,21 @@ interface ProfileOverview {
     }
 
     .btn-danger {
-      background: #ef4444;
-      color: white;
+      background: linear-gradient(135deg, var(--color-negative) 0%, #dc2626 100%);
+      color: var(--color-text-strong);
       border: none;
+      box-shadow: 0 4px 12px -2px rgba(239, 68, 68, 0.4);
     }
 
     .btn-danger:hover {
-      background: #dc2626;
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      box-shadow: 0 8px 20px -4px rgba(239, 68, 68, 0.5);
     }
 
     .btn-danger:disabled {
-      background: #fca5a5;
+      background: rgba(239, 68, 68, 0.3);
       cursor: not-allowed;
+      opacity: 0.6;
     }
   `]
 })

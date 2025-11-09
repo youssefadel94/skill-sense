@@ -924,12 +924,16 @@ export class LearningPathsComponent implements OnInit {
   }
 
   async generatePath() {
-    if (!this.targetGoal) return;
+    const trimmedGoal = this.targetGoal.trim();
+    if (!trimmedGoal) {
+      this.error = 'Please provide a target goal before generating a learning path';
+      return;
+    }
 
     this.generating = true;
     this.error = '';
 
-    const userId = this.authService.getUserId();
+    const userId = await this.authService.getUserId();
     if (!userId) {
       this.error = 'Please login to generate learning paths';
       this.generating = false;
@@ -937,7 +941,7 @@ export class LearningPathsComponent implements OnInit {
     }
 
     const config = {
-      targetGoal: this.targetGoal,
+      targetGoal: trimmedGoal,
       learningStyle: this.learningStyle,
       timeCommitment: this.timeCommitment
     };

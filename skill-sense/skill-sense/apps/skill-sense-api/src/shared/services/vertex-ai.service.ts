@@ -395,6 +395,7 @@ Extract ALL skills you can find. Return the JSON array now:`;
     targetRole: string,
   ): Promise<any> {
     this.logger.debug(`Analyzing skill gaps for ${targetRole}`);
+    this.logger.debug(`Current skills: ${currentSkills.join(', ')}`);
 
     const prompt = `You are a career development expert. Analyze skill gaps for someone targeting this role.
 
@@ -427,14 +428,24 @@ Return ONLY a valid JSON object with this structure:
 Return JSON only, no markdown formatting.`;
 
     try {
+      this.logger.debug('Calling Gemini API for skill gap analysis...');
       const response = await this.generateContent(prompt);
+      this.logger.debug(`Gemini response received, length: ${response.length}`);
+      this.logger.debug(`Raw response preview: ${response.substring(0, 200)}...`);
+      
       const parsed = this.parseJSON(response);
+      this.logger.log(`Skill gap analysis complete: ${parsed.gaps?.length || 0} gaps found`);
+      
       return parsed;
     } catch (error) {
       this.logger.error(`Skill gap analysis failed: ${error.message}`);
+      this.logger.error(`Error stack: ${error.stack}`);
+      
+      // Return a more helpful error response
       return {
         gaps: [],
-        summary: 'Analysis failed. Please try again or check your configuration.',
+        summary: `Analysis failed: ${error.message}. Please try again or check your configuration.`,
+        error: error.message
       };
     }
   }
