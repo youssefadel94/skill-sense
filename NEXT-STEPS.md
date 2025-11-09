@@ -24,13 +24,13 @@
 ```bash
 # Authenticate
 gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
+gcloud config set project ai-agents-repository-dmxd
 
 # Enable APIs
 gcloud services enable run.googleapis.com aiplatform.googleapis.com firestore.googleapis.com storage.googleapis.com
 
 # Create Firestore database
-gcloud firestore databases create --region=us-central1
+gcloud firestore databases create --location=us-central1
 
 # Create GCS bucket
 gsutil mb -l us-central1 gs://YOUR-BUCKET-NAME

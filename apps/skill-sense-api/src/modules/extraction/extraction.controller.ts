@@ -1,23 +1,24 @@
 import { Controller, Post, Body, Param, Get } from '@nestjs/common';
 import { ExtractionService } from './extraction.service';
+import { ExtractFromCvDto, ExtractFromGitHubDto, ExtractFromLinkedInDto } from './dto/extraction.dto';
 
 @Controller('extraction')
 export class ExtractionController {
   constructor(private readonly extractionService: ExtractionService) {}
 
   @Post('cv')
-  async extractFromCV(@Body() data: { userId: string; fileUrl: string }) {
-    return this.extractionService.extractFromCV(data.userId, data.fileUrl);
+  async extractFromCV(@Body() dto: ExtractFromCvDto) {
+    return this.extractionService.extractFromCV(dto.userId, dto.fileUrl);
   }
 
   @Post('github')
-  async extractFromGitHub(@Body() data: { userId: string; username: string }) {
-    return this.extractionService.extractFromGitHub(data.userId, data.username);
+  async extractFromGitHub(@Body() dto: ExtractFromGitHubDto) {
+    return this.extractionService.extractFromGitHub(dto.userId, dto.username);
   }
 
   @Post('linkedin')
-  async extractFromLinkedIn(@Body() data: { userId: string; profileUrl: string }) {
-    return this.extractionService.extractFromLinkedIn(data.userId, data.profileUrl);
+  async extractFromLinkedIn(@Body() dto: ExtractFromLinkedInDto) {
+    return this.extractionService.extractFromLinkedIn(dto.userId, dto.profileUrl);
   }
 
   @Get('job/:jobId')

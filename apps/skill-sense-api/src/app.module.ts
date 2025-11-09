@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SharedModule } from './shared/shared.module';
 import { ProfileModule } from './modules/profile/profile.module';
@@ -6,6 +6,7 @@ import { ExtractionModule } from './modules/extraction/extraction.module';
 import { ConnectorsModule } from './modules/connectors/connectors.module';
 import { SearchModule } from './modules/search/search.module';
 import { HealthModule } from './modules/health/health.module';
+import { WeaviateService } from './shared/services/weaviate.service';
 
 @Module({
   imports: [
@@ -21,4 +22,15 @@ import { HealthModule } from './modules/health/health.module';
     HealthModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements OnModuleInit {
+  constructor(private readonly weaviateService: WeaviateService) {}
+
+  async onModuleInit() {
+    // Initialize Weaviate schema on startup
+    try {
+      await this.weaviateService.createSchema();
+    } catch (error) {
+      console.warn('Weaviate schema initialization skipped:', error.message);
+    }
+  }
+}
