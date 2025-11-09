@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
 import type { Profile } from '../models';
 
 interface CVTemplate {
@@ -595,6 +596,7 @@ interface GeneratedCV {
 })
 export class CvGeneratorComponent implements OnInit {
   private apiService = inject(ApiService);
+  private auth = inject(AuthService);
 
   loading = false;
   error = '';
@@ -637,16 +639,23 @@ export class CvGeneratorComponent implements OnInit {
       this.loading = true;
       this.loadingMessage = 'Loading your profile...';
 
-      // TODO: Replace with actual API call
-      // this.apiService.getProfile().subscribe({
-      //   next: (profile) => { this.profile = profile; },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.loading = false; }
-      // });
+      const userId = this.auth.getUserId();
+      if (!userId) {
+        this.error = 'Please log in to generate CVs';
+        this.loading = false;
+        return;
+      }
 
-      await this.delay(800);
-      // Mock profile loaded
-      this.loading = false;
+      this.apiService.getProfile(userId).subscribe({
+        next: (profile) => {
+          this.profile = profile;
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = err.message || 'Failed to load profile';
+          this.loading = false;
+        }
+      });
     } catch (err: any) {
       this.error = err.message || 'Failed to load profile';
       this.loading = false;
@@ -654,26 +663,17 @@ export class CvGeneratorComponent implements OnInit {
   }
 
   async loadRecentCVs() {
-    // TODO: Fetch from API
-    // Mock data
-    this.recentCVs = [
-      {
-        id: '1',
-        profileId: 'user-123',
-        template: 'modern',
-        format: 'pdf',
-        content: '',
-        createdAt: new Date(Date.now() - 86400000)
-      },
-      {
-        id: '2',
-        profileId: 'user-123',
-        template: 'classic',
-        format: 'docx',
-        content: '',
-        createdAt: new Date(Date.now() - 172800000)
-      }
-    ];
+    try {
+      const userId = this.auth.getUserId();
+      if (!userId) return;
+
+      this.apiService.getRecentCVs(userId, 10).subscribe({
+        next: (cvs) => { this.recentCVs = cvs; },
+        error: (err) => console.error('Failed to load recent CVs:', err)
+      });
+    } catch (err) {
+      console.error('Failed to load recent CVs:', err);
+    }
   }
 
   selectTemplate(templateId: string) {
@@ -694,25 +694,33 @@ export class CvGeneratorComponent implements OnInit {
       this.generating = true;
       this.error = '';
 
-      // TODO: Replace with actual API call
-      // this.apiService.generateCV({
-      //   targetRole: this.targetRole,
-      //   template: this.selectedTemplate,
-      //   format: this.outputFormat,
-      //   sections: this.sections,
-      //   emphasisCategories: this.emphasisCategories
-      // }).subscribe({
-      //   next: (cv) => { this.generatedCV = cv; },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.generating = false; }
-      // });
+      const userId = this.auth.getUserId();
+      if (!userId) {
+        this.error = 'Please log in to generate CVs';
+        this.generating = false;
+        return;
+      }
 
-      await this.delay(2000);
-      this.generatedCV = this.generateMockCV();
+      this.apiService.generateCV(userId, {
+        targetRole: this.targetRole,
+        template: this.selectedTemplate,
+        format: this.outputFormat,
+        sections: this.sections,
+        emphasisCategories: this.emphasisCategories
+      }).subscribe({
+        next: (cv) => {
+          this.generatedCV = cv;
+          this.recentCVs.unshift(cv);
+        },
+        error: (err) => {
+          this.error = err.message || 'Failed to generate CV';
+          this.generating = false;
+        },
+        complete: () => { this.generating = false; }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to generate CV';
-    } finally {
       this.generating = false;
     }
   }
@@ -724,10 +732,22 @@ export class CvGeneratorComponent implements OnInit {
 
   downloadCV(cv?: GeneratedCV) {
     const targetCV = cv || this.generatedCV;
-    if (!targetCV) return;
+    if (!targetCV || !targetCV.id) return;
 
-    // TODO: Implement actual download
-    alert(`Downloading ${targetCV.format.toUpperCase()} CV...`);
+    this.apiService.downloadCV(targetCV.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `cv-${targetCV.template}.${targetCV.format}`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Download failed:', err);
+        alert('Failed to download CV. Please try again.');
+      }
+    });
   }
 
   loadCV(cv: GeneratedCV) {

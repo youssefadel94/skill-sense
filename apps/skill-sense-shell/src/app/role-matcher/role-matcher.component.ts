@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
 
 interface JobMatch {
   id: string;
@@ -835,6 +836,7 @@ interface MatchAnalysis {
 })
 export class RoleMatcherComponent implements OnInit {
   private apiService = inject(ApiService);
+  private auth = inject(AuthService);
 
   loading = false;
   error = '';
@@ -845,7 +847,7 @@ export class RoleMatcherComponent implements OnInit {
   searchQuery = '';
   location = 'Remote';
   minMatchScore = 70;
-  sortBy = 'match';
+  sortBy: 'match' | 'salary' | 'date' = 'match';
 
   matches: JobMatch[] = [];
   selectedMatch: JobMatch | null = null;
