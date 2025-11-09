@@ -239,17 +239,28 @@ export class RegisterComponent {
     try {
       // Register user with Firebase Auth
       const user = await this.authService.register(this.email, this.password);
+      console.log('User registered with Firebase:', user.uid);
 
       // Create profile in backend
-      await this.apiService.createProfile({
-        userId: user.uid,
-        name: this.name,
-        email: this.email
-      });
+      try {
+        await firstValueFrom(this.apiService.createProfile({
+          userId: user.uid,
+          name: this.name,
+          email: this.email
+        }));
+        console.log('Profile created successfully');
+      } catch (profileError: any) {
+        console.error('Failed to create profile:', profileError);
+        // Show warning but don't block - profile can be created on login
+        this.errorMessage = 'Account created but profile setup incomplete. You can still login.';
+        // Wait a bit to show the message
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
 
       // Navigate to dashboard
       this.router.navigate(['/dashboard']);
     } catch (error: any) {
+      console.error('Registration error:', error);
       this.errorMessage = error.message || 'Registration failed. Please try again.';
     } finally {
       this.loading = false;

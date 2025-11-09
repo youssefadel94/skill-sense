@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, from, switchMap } from 'rxjs';
+import { Observable, from, switchMap, catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -40,6 +40,40 @@ export class ApiService {
   listProfiles(): Observable<any> {
     return this.getAuthHeaders().pipe(
       switchMap((headers) => this.http.get(`${this.apiUrl}/profiles`, { headers }))
+    );
+  }
+
+  /**
+   * Ensures a profile exists for the user. Creates one if missing.
+   * @param userId - Firebase user ID
+   * @param email - User email address
+   * @param name - User display name
+   * @returns Observable of the profile
+   */
+  ensureProfile(userId: string, email: string, name?: string): Observable<any> {
+    console.log('ensureProfile called for userId:', userId);
+    return this.getProfile(userId).pipe(
+      catchError((error) => {
+        console.log('getProfile error:', error);
+        console.log('Error status:', error.status);
+        console.log('Error statusText:', error.statusText);
+
+        // If profile not found (404 or null response), create it
+        if (error.status === 404 || error.status === 0 || !error.status) {
+          console.log('Profile not found (status:', error.status, '), creating new profile for user:', userId);
+          const profileData = {
+            userId,
+            email,
+            name: name || email.split('@')[0] || 'User'
+          };
+          console.log('Creating profile with data:', profileData);
+          return this.createProfile(profileData);
+        }
+
+        // Re-throw other errors
+        console.error('Unexpected error while checking profile:', error);
+        return throwError(() => error);
+      })
     );
   }
 

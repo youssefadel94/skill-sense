@@ -360,28 +360,19 @@ export class LoginComponent {
       // Login with Firebase
       const user = await this.authService.login(this.email, this.password);
 
-      // Check if profile exists, create if missing
+      // Ensure profile exists (will create if missing)
       try {
-        await firstValueFrom(this.apiService.getProfile(user.uid));
-        console.log('Profile exists for user');
-      } catch (error: any) {
-        // Profile doesn't exist, create one
-        if (error.status === 404 || error.status === 0) {
-          console.log('Profile not found, creating new profile');
-          try {
-            await firstValueFrom(this.apiService.createProfile({
-              userId: user.uid,
-              name: user.displayName || user.email?.split('@')[0] || 'User',
-              email: user.email || this.email
-            }));
-            console.log('Profile created successfully');
-          } catch (createError) {
-            console.error('Failed to create profile:', createError);
-            // Don't block login if profile creation fails
-          }
-        } else {
-          console.error('Error checking profile:', error);
-        }
+        await firstValueFrom(
+          this.apiService.ensureProfile(
+            user.uid,
+            user.email || this.email,
+            user.displayName || undefined
+          )
+        );
+        console.log('Profile verified/created for user');
+      } catch (profileError) {
+        console.error('Profile check/creation failed:', profileError);
+        // Don't block login if profile operations fail
       }
 
       // Get return URL from query parameters or default to dashboard

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Delete, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Delete, Query, Res, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ProfileService } from './profile.service';
@@ -31,7 +31,11 @@ export class ProfileController {
   @ApiResponse({ status: 200, description: 'Profile found' })
   @ApiResponse({ status: 404, description: 'Profile not found' })
   async getProfile(@Param('id') id: string) {
-    return this.profileService.getProfile(id);
+    const profile = await this.profileService.getProfile(id);
+    if (!profile) {
+      throw new NotFoundException(`Profile not found for user: ${id}`);
+    }
+    return profile;
   }
 
   @Get()

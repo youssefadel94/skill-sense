@@ -279,7 +279,8 @@ export class DashboardComponent implements OnInit {
         next: (profile) => {
           // Handle null or missing profile gracefully
           if (!profile) {
-            console.warn('No profile found for user, using default values');
+            console.warn('No profile found for user, showing empty dashboard');
+            this.error = 'Profile not found. Your profile may still be loading. Please refresh the page.';
             this.stats = {
               totalSkills: 0,
               profilesAnalyzed: 0,
@@ -303,7 +304,19 @@ export class DashboardComponent implements OnInit {
         },
         error: (err) => {
           console.error('Failed to load dashboard data:', err);
-          this.error = err.message || 'Failed to load dashboard data';
+
+          // Handle 404 - profile not found
+          if (err.status === 404) {
+            this.error = 'Profile not found. Your profile may still be loading. Please refresh the page in a moment.';
+            this.stats = {
+              totalSkills: 0,
+              profilesAnalyzed: 0,
+              gapsIdentified: 0,
+              confidenceAverage: 0
+            };
+          } else {
+            this.error = err.message || 'Failed to load dashboard data. Please try again.';
+          }
           this.loading = false;
         }
       });
