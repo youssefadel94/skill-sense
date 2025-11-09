@@ -80,6 +80,30 @@ interface DashboardStats {
             <h3>Get Recommendations</h3>
             <p>Discover new skills to learn</p>
           </a>
+
+          <a [routerLink]="['/trends']" class="action-card">
+            <div class="action-icon">📈</div>
+            <h3>Market Trends</h3>
+            <p>Track skill demand and insights</p>
+          </a>
+
+          <a [routerLink]="['/cv-generator']" class="action-card">
+            <div class="action-icon">📝</div>
+            <h3>Generate CV</h3>
+            <p>AI-powered resume builder</p>
+          </a>
+
+          <a [routerLink]="['/role-matcher']" class="action-card">
+            <div class="action-icon">🎯</div>
+            <h3>Match Roles</h3>
+            <p>Find jobs that fit your skills</p>
+          </a>
+
+          <a [routerLink]="['/learning-paths']" class="action-card">
+            <div class="action-icon">🎓</div>
+            <h3>Learning Paths</h3>
+            <p>Personalized skill roadmaps</p>
+          </a>
         </div>
       }
     </div>

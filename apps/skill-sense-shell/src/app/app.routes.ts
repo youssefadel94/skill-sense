@@ -7,6 +7,9 @@ import { UploadComponent } from './upload/upload.component';
 import { SkillGapsComponent } from './gaps/skill-gaps.component';
 import { RecommendationsComponent } from './recommendations/recommendations.component';
 import { TrendsComponent } from './trends/trends.component';
+import { CvGeneratorComponent } from './cv-generator/cv-generator.component';
+import { RoleMatcherComponent } from './role-matcher/role-matcher.component';
+import { LearningPathsComponent } from './learning-paths/learning-paths.component';
 import { authGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
@@ -19,4 +22,7 @@ export const routes: Routes = [
   { path: 'gaps', component: SkillGapsComponent, canActivate: [authGuard] },
   { path: 'recommendations', component: RecommendationsComponent, canActivate: [authGuard] },
   { path: 'trends', component: TrendsComponent, canActivate: [authGuard] },
+  { path: 'cv-generator', component: CvGeneratorComponent, canActivate: [authGuard] },
+  { path: 'role-matcher', component: RoleMatcherComponent, canActivate: [authGuard] },
+  { path: 'learning-paths', component: LearningPathsComponent, canActivate: [authGuard] },
 ];

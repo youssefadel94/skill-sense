@@ -41,3 +41,4 @@ firestore-debug.log
 
 # Cloud Run
 .gcloudignore
+/apps/skill-sense-shell/src/environments/environment.ts
