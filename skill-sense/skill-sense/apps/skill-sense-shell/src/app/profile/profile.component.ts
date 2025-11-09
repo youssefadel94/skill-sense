@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
 import { firstValueFrom } from 'rxjs';
@@ -788,10 +788,13 @@ interface ProfileOverview {
 export class ProfileComponent implements OnInit {
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
+  private route = inject(ActivatedRoute);
 
   loading = true;
   error = '';
   categoryFilter = '';
+  viewingUserId: string | null = null; // ID of user being viewed (if different from current user)
+  isOwnProfile = true; // Whether viewing own profile or someone else's
 
   profile: ProfileOverview = {
     id: '',
@@ -814,7 +817,23 @@ export class ProfileComponent implements OnInit {
   showCvModal: boolean = false;
 
   ngOnInit() {
-    this.loadProfile();
+    // Check if viewing a specific user's profile via route parameter
+    this.route.params.subscribe(params => {
+      const routeUserId = params['id'];
+      const currentUserId = this.authService.getUserId();
+      
+      if (routeUserId) {
+        this.viewingUserId = routeUserId;
+        this.isOwnProfile = routeUserId === currentUserId;
+        console.log('[PROFILE] Viewing user profile:', routeUserId, 'isOwn:', this.isOwnProfile);
+      } else {
+        this.viewingUserId = null;
+        this.isOwnProfile = true;
+        console.log('[PROFILE] Viewing own profile');
+      }
+      
+      this.loadProfile();
+    });
   }
 
   async loadProfile() {
@@ -822,7 +841,8 @@ export class ProfileComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      const userId = this.authService.getUserId();
+      // Use route parameter ID if viewing another user, otherwise use current user
+      const userId = this.viewingUserId || this.authService.getUserId();
       console.log('[PROFILE] Loading profile for userId:', userId);
 
       if (!userId) {
