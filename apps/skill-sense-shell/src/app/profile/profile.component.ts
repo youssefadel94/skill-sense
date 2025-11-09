@@ -88,8 +88,8 @@ interface Skill {
                     <div class="stat">
                       <span class="label">Confidence:</span>
                       <div class="confidence-bar">
-                        <div 
-                          class="confidence-fill" 
+                        <div
+                          class="confidence-fill"
                           [style.width.%]="skill.confidence * 100"
                         ></div>
                       </div>
@@ -345,7 +345,7 @@ export class ProfileComponent implements OnInit {
   loading = true;
   error = '';
   categoryFilter = '';
-  
+
   profile: Profile = {
     id: '',
     name: '',
@@ -368,14 +368,14 @@ export class ProfileComponent implements OnInit {
     try {
       this.loading = true;
       this.error = '';
-      
+
       // TODO: Replace with actual API calls
       // const profile = await this.apiService.getProfile();
       // const skills = await this.apiService.getSkills(profile.id);
-      
+
       // Mock data for now
       await this.delay(800);
-      
+
       this.profile = {
         id: '123',
         name: 'John Doe',
@@ -389,7 +389,7 @@ export class ProfileComponent implements OnInit {
       this.skills = this.generateMockSkills();
       this.filteredSkills = [...this.skills];
       this.categories = [...new Set(this.skills.map(s => s.category))];
-      
+
     } catch (err: any) {
       this.error = err.message || 'Failed to load profile';
     } finally {

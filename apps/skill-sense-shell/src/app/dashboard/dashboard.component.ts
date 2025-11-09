@@ -36,19 +36,19 @@ interface DashboardStats {
             <div class="stat-value">{{ stats.totalSkills }}</div>
             <div class="stat-label">Total Skills</div>
           </div>
-          
+
           <div class="stat-card">
             <div class="stat-icon">📁</div>
             <div class="stat-value">{{ stats.profilesAnalyzed }}</div>
             <div class="stat-label">Sources Analyzed</div>
           </div>
-          
+
           <div class="stat-card">
             <div class="stat-icon">🎯</div>
             <div class="stat-value">{{ stats.gapsIdentified }}</div>
             <div class="stat-label">Skill Gaps</div>
           </div>
-          
+
           <div class="stat-card">
             <div class="stat-icon">✨</div>
             <div class="stat-value">{{ stats.confidenceAverage }}%</div>
@@ -62,19 +62,19 @@ interface DashboardStats {
             <h3>Upload CV</h3>
             <p>Extract skills from your resume</p>
           </a>
-          
+
           <a [routerLink]="['/profile']" class="action-card">
             <div class="action-icon">👤</div>
             <h3>View Profile</h3>
             <p>See your complete skill profile</p>
           </a>
-          
+
           <a [routerLink]="['/gaps']" class="action-card">
             <div class="action-icon">🔍</div>
             <h3>Analyze Gaps</h3>
             <p>Find skill gaps for target roles</p>
           </a>
-          
+
           <a [routerLink]="['/recommendations']" class="action-card">
             <div class="action-icon">💡</div>
             <h3>Get Recommendations</h3>
@@ -245,10 +245,10 @@ export class DashboardComponent implements OnInit {
     try {
       this.loading = true;
       this.error = '';
-      
+
       // TODO: Replace with actual API call once backend is ready
       // const data = await this.apiService.getDashboardStats();
-      
+
       // Mock data for now
       await this.delay(1000);
       this.stats = {
@@ -257,7 +257,7 @@ export class DashboardComponent implements OnInit {
         gapsIdentified: 8,
         confidenceAverage: 87
       };
-      
+
     } catch (err: any) {
       this.error = err.message || 'Failed to load dashboard data';
     } finally {

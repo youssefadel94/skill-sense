@@ -22,13 +22,13 @@ interface UploadResult {
       </header>
 
       <div class="upload-card">
-        <div class="upload-zone" 
+        <div class="upload-zone"
              [class.dragover]="isDragOver"
              (dragover)="onDragOver($event)"
              (dragleave)="onDragLeave($event)"
              (drop)="onDrop($event)"
              (click)="fileInput.click()">
-          
+
           @if (!selectedFile && !uploading && !result) {
             <div class="upload-prompt">
               <div class="upload-icon">📄</div>
@@ -71,7 +71,7 @@ interface UploadResult {
             </div>
           }
 
-          <input 
+          <input
             #fileInput
             type="file"
             accept=".pdf,.docx"
