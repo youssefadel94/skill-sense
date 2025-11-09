@@ -1,0 +1,96 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+*.js.map
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!.env.example
+
+# Environment config files (keep templates)
+**/environment.ts
+!**/environment.ts.template
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+junit.xml
+
+# Logs
+logs/
+*.log
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Google Cloud
+*-key.json
+service-account.json
+gcloud-key.json
+
+# NX
+.nx/
+
+# Angular
+/.angular/cache
+
+# Local development
+.env.development
+.env.staging
+credentials.json
+secrets/
+
+# Compiled files
+*.tsbuildinfo
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Misc
+*.bak
+*.old
+*.orig
