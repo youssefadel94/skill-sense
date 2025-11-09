@@ -563,22 +563,25 @@ export class ProfileService {
     }
 
     const pathId = `path-${userId}-${Date.now()}`;
+    const targetGoal = dto.targetGoal || 'Professional Development';
+    const learningStyle = dto.learningStyle || 'balanced';
+    const timeCommitment = dto.timeCommitment || 5;
 
     // Mock path generation - in production, use AI
-    const path = {
+    const path: any = {
       id: pathId,
       userId,
-      title: `Path to ${dto.targetGoal}`,
-      targetGoal: dto.targetGoal,
-      learningStyle: dto.learningStyle,
-      timeCommitment: dto.timeCommitment,
+      title: `Path to ${targetGoal}`,
+      targetGoal,
+      learningStyle,
+      timeCommitment,
       progress: 0,
       createdAt: new Date().toISOString(),
       steps: [
         {
           id: 'step-1',
           title: 'Foundation Concepts',
-          description: `Learn the basics of ${dto.targetGoal}`,
+          description: `Learn the basics of ${targetGoal}`,
           duration: '8 hours',
           completed: false,
           resources: [

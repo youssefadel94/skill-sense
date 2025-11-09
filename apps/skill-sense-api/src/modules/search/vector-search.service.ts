@@ -42,82 +42,12 @@ export class VectorSearchService {
         return this.findSimilarProfilesFirestore(userId, userSkills, limit);
       }
 
-      // Search for similar skill profiles in Weaviate
-      const userSkillsText = userSkills.join(', ');
-      const client = this.weaviate.getClient();
-      
-      const result = await client.graphql
-        .get()
-        .withClassName('Skill')
-        .withNearText({ concepts: [userSkillsText] })
-        .withWhere({
-          path: ['userId'],
-          operator: 'NotEqual',
-          valueString: userId, // Exclude self
-        })
-        .withFields('userId name category proficiency _additional { distance }')
-        .withLimit(limit * 10) // Get more results to find unique profiles
-        .do();
-
-      const skills = result?.data?.Get?.Skill || [];
-      this.logger.log(`Found ${skills.length} similar skills from vector search`);
-
-      if (skills.length === 0) {
-        this.logger.warn('No similar skills found in Weaviate, falling back to Firestore');
-        return this.findSimilarProfilesFirestore(userId, userSkills, limit);
-      }
-
-      // Group by userId to get unique profiles
-      const profileMap = new Map<string, any>();
-      skills.forEach((skill: any) => {
-        const uid = skill.userId;
-        if (!profileMap.has(uid)) {
-          profileMap.set(uid, {
-            userId: uid,
-            skills: [],
-            distances: [],
-          });
-        }
-        const profileData = profileMap.get(uid);
-        profileData.skills.push(skill.name);
-        profileData.distances.push(skill._additional?.distance || 1);
-      });
-
-      // Fetch full profile data and calculate similarity
-      const similarProfiles: any[] = [];
-      for (const [uid, data] of profileMap.entries()) {
-        try {
-          const profile: any = await this.firestore.getDocument('profiles', uid);
-          if (profile) {
-            const averageDistance = data.distances.reduce((a: number, b: number) => a + b, 0) / data.distances.length;
-            const similarityScore = Math.round((1 - averageDistance) * 100);
-
-            similarProfiles.push({
-              userId: uid,
-              name: profile.name || 'Anonymous User',
-              title: profile.title || 'Professional',
-              location: profile.location || null,
-              profilePicture: profile.profilePicture || null,
-              similarityScore,
-              matchingSkills: data.skills,
-              email: profile.email,
-            });
-          }
-        } catch (error) {
-          this.logger.warn(`Failed to fetch profile ${uid}: ${error.message}`);
-        }
-      }
-
-      // Sort by similarity score and limit results
-      const sortedProfiles = similarProfiles
-        .sort((a, b) => b.similarityScore - a.similarityScore)
-        .slice(0, limit);
-
-      this.logger.log(`✓ Found ${sortedProfiles.length} similar profiles`);
-      return sortedProfiles;
+      // For now, use Firestore-based matching until Weaviate text vectorization is configured
+      this.logger.log('Using Firestore-based skill matching (Weaviate text vectorization not configured)');
+      return this.findSimilarProfilesFirestore(userId, userSkills, limit);
 
     } catch (error) {
-      this.logger.error(`Error finding similar profiles: ${error.message}`);
+      this.logger.error(`Error finding similar profiles: ${error.message}`, error.stack);
       // Fallback to simple Firestore matching
       try {
         const userProfile: any = await this.firestore.getDocument('profiles', userId);
