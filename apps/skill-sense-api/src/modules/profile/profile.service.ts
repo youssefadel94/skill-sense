@@ -15,11 +15,29 @@ export class ProfileService {
 
   async createProfile(data: any) {
     this.logger.log('Creating profile');
-    return this.firestore.createDocument(this.collection, {
-      ...data,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    
+    // Use userId as the document ID to ensure one profile per user
+    const userId = data.userId;
+    if (!userId) {
+      throw new Error('userId is required to create a profile');
+    }
+    
+    // Check if profile already exists to prevent duplicates
+    const existingProfile = await this.getProfile(userId);
+    if (existingProfile) {
+      this.logger.warn(`Profile already exists for user ${userId}, returning existing profile`);
+      return existingProfile;
+    }
+    
+    return this.firestore.createDocument(
+      this.collection,
+      {
+        ...data,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      userId // Use userId as document ID
+    );
   }
 
   async getProfile(id: string) {

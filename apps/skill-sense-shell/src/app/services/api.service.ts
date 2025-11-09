@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, from, switchMap, catchError, throwError } from 'rxjs';
+import { Observable, from, switchMap, catchError, throwError, map, shareReplay } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -11,6 +11,9 @@ export class ApiService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
   private apiUrl = environment.apiUrl;
+
+  // Cache for profile creation to prevent duplicates
+  private profileCreationCache = new Map<string, Observable<any>>();
 
   private getAuthHeaders(): Observable<HttpHeaders> {
     return from(this.auth.getIdToken()).pipe(
@@ -52,13 +55,31 @@ export class ApiService {
    */
   ensureProfile(userId: string, email: string, name?: string): Observable<any> {
     console.log('ensureProfile called for userId:', userId);
-    return this.getProfile(userId).pipe(
+
+    // Check if we're already creating a profile for this user
+    if (this.profileCreationCache.has(userId)) {
+      console.log('Profile creation already in progress for user:', userId);
+      return this.profileCreationCache.get(userId)!;
+    }
+
+    const profileRequest = this.getProfile(userId).pipe(
+      map((profile) => {
+        // Handle null response (before backend fix is deployed)
+        if (!profile) {
+          console.log('Profile returned null, treating as not found');
+          throw { status: 404, message: 'Profile not found' };
+        }
+        console.log('Profile found:', profile);
+        // Clear cache on success
+        this.profileCreationCache.delete(userId);
+        return profile;
+      }),
       catchError((error) => {
         console.log('getProfile error:', error);
         console.log('Error status:', error.status);
         console.log('Error statusText:', error.statusText);
 
-        // If profile not found (404 or null response), create it
+        // If profile not found (404, null response, or network error), create it
         if (error.status === 404 || error.status === 0 || !error.status) {
           console.log('Profile not found (status:', error.status, '), creating new profile for user:', userId);
           const profileData = {
@@ -67,14 +88,32 @@ export class ApiService {
             name: name || email.split('@')[0] || 'User'
           };
           console.log('Creating profile with data:', profileData);
-          return this.createProfile(profileData);
+          return this.createProfile(profileData).pipe(
+            map(createdProfile => {
+              // Clear cache after successful creation
+              this.profileCreationCache.delete(userId);
+              return createdProfile;
+            }),
+            catchError(createError => {
+              // Clear cache on error too
+              this.profileCreationCache.delete(userId);
+              return throwError(() => createError);
+            })
+          );
         }
 
         // Re-throw other errors
         console.error('Unexpected error while checking profile:', error);
+        this.profileCreationCache.delete(userId);
         return throwError(() => error);
-      })
+      }),
+      shareReplay(1) // Share the result among multiple subscribers
     );
+
+    // Cache the request
+    this.profileCreationCache.set(userId, profileRequest);
+
+    return profileRequest;
   }
 
   // Skill analysis endpoints
