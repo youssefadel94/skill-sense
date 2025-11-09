@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { FirestoreService } from '../../shared/services/firestore.service';
 import { VertexAIService } from '../../shared/services/vertex-ai.service';
+import { WeaviateService } from '../../shared/services/weaviate.service';
 import { GcsService } from '../../shared/services/gcs.service';
 import { GenerateCVDto, MatchRolesDto, GenerateLearningPathDto } from './dto/advanced.dto';
 
@@ -12,8 +13,26 @@ export class ProfileService {
   constructor(
     private readonly firestore: FirestoreService,
     private readonly vertexAI: VertexAIService,
+    private readonly weaviate: WeaviateService,
     private readonly gcs: GcsService,
-  ) {}
+  ) {
+    // Initialize Weaviate schema on startup
+    this.initializeVectorStore();
+  }
+
+  private async initializeVectorStore() {
+    try {
+      const isReady = await this.weaviate.isReady();
+      if (isReady) {
+        await this.weaviate.createSchema();
+        this.logger.log('✓ Vector store initialized successfully');
+      } else {
+        this.logger.warn('⚠️ Weaviate vector store not available. Skill search will be limited.');
+      }
+    } catch (error) {
+      this.logger.error(`Vector store initialization failed: ${error.message}`);
+    }
+  }
 
   async createProfile(data: any) {
     this.logger.log('Creating profile');
@@ -53,6 +72,66 @@ export class ProfileService {
       ...data,
       updatedAt: new Date().toISOString(),
     });
+  }
+
+  /**
+   * Sync skills to Weaviate vector database for semantic search
+   */
+  async syncSkillsToVectorStore(userId: string, skills: any[]) {
+    try {
+      const isReady = await this.weaviate.isReady();
+      if (!isReady) {
+        this.logger.warn('[VECTOR SYNC] Weaviate not available, skipping sync');
+        return;
+      }
+
+      this.logger.log(`[VECTOR SYNC] Syncing ${skills.length} skills to vector store for user ${userId}`);
+
+      // Add each skill to Weaviate
+      let syncedCount = 0;
+      for (const skill of skills) {
+        try {
+          await this.weaviate.addSkill({
+            name: skill.name,
+            category: skill.category || 'uncategorized',
+            proficiency: skill.proficiency || 'intermediate',
+            evidence: skill.evidence || '',
+            source: skill.sources?.[0] || 'unknown',
+            userId: userId,
+            confidence: skill.confidence || 0.5,
+          });
+          syncedCount++;
+        } catch (error) {
+          this.logger.warn(`[VECTOR SYNC] Failed to sync skill "${skill.name}": ${error.message}`);
+        }
+      }
+
+      this.logger.log(`[VECTOR SYNC] ✓ Successfully synced ${syncedCount}/${skills.length} skills to vector store`);
+    } catch (error) {
+      this.logger.error(`[VECTOR SYNC] ✗ Vector sync failed: ${error.message}`);
+      // Don't throw error - vector sync is not critical
+    }
+  }
+
+  /**
+   * Search skills using semantic/vector search
+   */
+  async searchSkillsSemantic(query: string, userId?: string, limit: number = 10) {
+    try {
+      const isReady = await this.weaviate.isReady();
+      if (!isReady) {
+        this.logger.warn('[VECTOR SEARCH] Weaviate not available, returning empty results');
+        return [];
+      }
+
+      this.logger.log(`[VECTOR SEARCH] Searching for: "${query}" (user: ${userId || 'all'})`);
+      const results = await this.weaviate.searchSkills(query, userId, limit);
+      this.logger.log(`[VECTOR SEARCH] ✓ Found ${results.length} results`);
+      return results;
+    } catch (error) {
+      this.logger.error(`[VECTOR SEARCH] ✗ Search failed: ${error.message}`);
+      return [];
+    }
   }
 
   async listProfiles() {

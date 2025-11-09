@@ -77,6 +77,22 @@ export class ProfileController {
     return this.profileService.getSkillRecommendations(userId, targetRole);
   }
 
+  @Get(':id/search')
+  @ApiOperation({ summary: 'Semantic search for skills using vector database' })
+  @ApiParam({ name: 'id', description: 'User ID (optional - search all users if empty)' })
+  @ApiQuery({ name: 'q', required: true, description: 'Search query' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Max results (default: 10)' })
+  @ApiResponse({ status: 200, description: 'Returns similar skills using vector search' })
+  async searchSkills(
+    @Param('id') userId: string,
+    @Query('q') query: string,
+    @Query('limit') limit: number = 10,
+  ) {
+    // If userId is 'all' or empty, search across all users
+    const searchUserId = userId === 'all' || !userId ? undefined : userId;
+    return this.profileService.searchSkillsSemantic(query, searchUserId, limit);
+  }
+
   @Get(':id/export')
   @ApiOperation({ summary: 'Export user skills as JSON or CSV' })
   @ApiParam({ name: 'id', description: 'User ID' })

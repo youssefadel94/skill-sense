@@ -65,16 +65,52 @@ export class LinkedInConnectorService {
   }
 
   private async fetchLinkedInProfile(profileUrl: string): Promise<LinkedInProfile | null> {
-    // IMPORTANT: This is a placeholder implementation
-    // LinkedIn requires proper OAuth authentication and API access
-    
-    // For production, use LinkedIn's official API:
-    // https://docs.microsoft.com/en-us/linkedin/shared/integrations/people/profile-api
-    
-    this.logger.warn('LinkedIn connector requires proper OAuth setup');
-    
-    // Mock data for development/testing
-    // In production, replace this with actual LinkedIn API calls
+    const clientId = process.env.LINKEDIN_CLIENT_ID;
+    const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
+
+    // Check if LinkedIn credentials are configured
+    if (!clientId || !clientSecret) {
+      this.logger.warn('LinkedIn OAuth credentials not configured. Using mock data.');
+      this.logger.warn('Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET in .env to use real LinkedIn API');
+      
+      // Return mock data for development/testing
+      return this.getMockLinkedInProfile();
+    }
+
+    try {
+      // Extract username from LinkedIn URL
+      const username = this.extractUsernameFromUrl(profileUrl);
+      if (!username) {
+        throw new Error('Invalid LinkedIn profile URL');
+      }
+
+      this.logger.log(`Fetching LinkedIn profile for username: ${username}`);
+
+      // TODO: Implement OAuth flow to get access token
+      // For now, we need an access token from the user
+      // In production, implement the full OAuth 2.0 flow:
+      // 1. Redirect user to LinkedIn authorization URL
+      // 2. Exchange authorization code for access token
+      // 3. Use access token to fetch profile data
+
+      // LinkedIn API endpoint
+      // const response = await axios.get(`https://api.linkedin.com/v2/me`, {
+      //   headers: {
+      //     Authorization: `Bearer ${accessToken}`,
+      //     'LinkedIn-Version': '202401'
+      //   }
+      // });
+
+      this.logger.warn('Full OAuth flow not yet implemented. Using mock data.');
+      return this.getMockLinkedInProfile();
+
+    } catch (error) {
+      this.logger.error(`Failed to fetch LinkedIn profile: ${error.message}`);
+      return this.getMockLinkedInProfile();
+    }
+  }
+
+  private getMockLinkedInProfile(): LinkedInProfile {
     return {
       name: 'Sample User',
       headline: 'Software Engineer at Tech Company',

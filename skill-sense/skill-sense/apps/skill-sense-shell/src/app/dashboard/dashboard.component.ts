@@ -153,6 +153,13 @@ interface DashboardStats {
                 <p>Stay alert to rising and fading competencies.</p>
               </div>
             </a>
+            <a [routerLink]="['/integrations']" class="action-card">
+              <span class="action-card__icon">🔗</span>
+              <div>
+                <h3>Connect data sources</h3>
+                <p>Link LinkedIn, GitHub & more to enrich your profile.</p>
+              </div>
+            </a>
             <a [routerLink]="['/upload']" class="action-card">
               <span class="action-card__icon">📄</span>
               <div>
@@ -591,16 +598,6 @@ interface DashboardStats {
       .action-grid,
       .insight-grid {
         grid-template-columns: 1fr;
-      }
-    }
-
-      .dashboard-hero {
-        padding: 26px 22px;
-      }
-
-      .dashboard-hero__actions {
-        flex-direction: column;
-        align-items: stretch;
       }
 
       .action-card {

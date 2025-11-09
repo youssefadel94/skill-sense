@@ -15,7 +15,174 @@ export class ExtractionService {
     private readonly githubConnector: GithubConnectorService,
     private readonly linkedinConnector: LinkedInConnectorService,
     private readonly profileService: ProfileService,
-  ) {}
+  ) {
+    // Register this service as the job processor
+    this.jobQueue.setJobProcessor(this);
+    this.logger.log('ExtractionService registered as job processor');
+  }
+
+  /**
+   * Process jobs from the queue (GitHub, LinkedIn extraction)
+   */
+  async processJob(job: Job): Promise<any> {
+    this.logger.log(`[JOB PROCESSOR] Processing job ${job.id} of type ${job.type}`);
+
+    try {
+      switch (job.type) {
+        case 'github-extraction':
+          return await this.processGitHubJob(job);
+        
+        case 'linkedin-extraction':
+          return await this.processLinkedInJob(job);
+        
+        default:
+          this.logger.warn(`[JOB PROCESSOR] Unknown job type: ${job.type}`);
+          return { processed: false, message: `Unknown job type: ${job.type}` };
+      }
+    } catch (error: any) {
+      this.logger.error(`[JOB PROCESSOR] Failed to process job ${job.id}: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
+   * Process GitHub extraction job
+   */
+  private async processGitHubJob(job: Job): Promise<any> {
+    const { userId, username } = job.data;
+    this.logger.log(`[GITHUB JOB] Processing GitHub extraction for user ${userId}, username: ${username}`);
+
+    try {
+      // Extract skills from GitHub
+      const skills = await this.githubConnector.extractSkillsFromGitHub(username);
+      this.logger.log(`[GITHUB JOB] Extracted ${skills.length} skills from GitHub`);
+
+      // Update user profile with skills
+      await this.updateProfileWithSkills(userId, skills, 'github');
+
+      return {
+        success: true,
+        skillsExtracted: skills.length,
+        message: `Successfully extracted ${skills.length} skills from GitHub`
+      };
+    } catch (error: any) {
+      this.logger.error(`[GITHUB JOB] Failed: ${error.message}`, error.stack);
+      throw new Error(`GitHub extraction failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Process LinkedIn extraction job
+   */
+  private async processLinkedInJob(job: Job): Promise<any> {
+    const { userId, profileUrl } = job.data;
+    this.logger.log(`[LINKEDIN JOB] Processing LinkedIn extraction for user ${userId}, URL: ${profileUrl}`);
+
+    try {
+      // Extract skills from LinkedIn
+      const skills = await this.linkedinConnector.extractSkillsFromLinkedIn(profileUrl);
+      this.logger.log(`[LINKEDIN JOB] Extracted ${skills.length} skills from LinkedIn`);
+
+      // Update user profile with skills
+      await this.updateProfileWithSkills(userId, skills, 'linkedin');
+
+      return {
+        success: true,
+        skillsExtracted: skills.length,
+        message: `Successfully extracted ${skills.length} skills from LinkedIn`
+      };
+    } catch (error: any) {
+      this.logger.error(`[LINKEDIN JOB] Failed: ${error.message}`, error.stack);
+      throw new Error(`LinkedIn extraction failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update user profile with extracted skills from connectors
+   */
+  private async updateProfileWithSkills(userId: string, newSkills: any[], source: string): Promise<void> {
+    try {
+      const profile: any = await this.profileService.getProfile(userId);
+
+      if (!profile) {
+        throw new Error('Profile not found');
+      }
+
+      const existingSkills = profile.skills || [];
+      const skillMap = new Map();
+
+      // Index existing skills
+      existingSkills.forEach((skill: any) => {
+        const skillName = (skill.name || '').toString().toLowerCase();
+        if (skillName) {
+          skillMap.set(skillName, skill);
+        }
+      });
+
+      // Merge new skills
+      let newCount = 0;
+      let updatedCount = 0;
+
+      newSkills.forEach((skill: any) => {
+        const skillName = (skill.name || '').toString().toLowerCase();
+        if (!skillName) return;
+
+        const evidenceArray = Array.isArray(skill.evidence) ? skill.evidence : (skill.evidence ? [skill.evidence] : []);
+
+        if (!skillMap.has(skillName)) {
+          skillMap.set(skillName, {
+            name: skill.name,
+            category: skill.category || 'Uncategorized',
+            confidence: skill.confidence || 0.8,
+            verified: false,
+            sources: [source],
+            evidence: evidenceArray,
+            evidenceCount: evidenceArray.length,
+            occurrences: 1,
+            createdAt: new Date().toISOString(),
+          });
+          newCount++;
+        } else {
+          const existing = skillMap.get(skillName);
+          
+          // Calculate weighted average confidence
+          const oldOccurrences = existing.occurrences || 1;
+          const newOccurrences = oldOccurrences + 1;
+          const oldConfidence = existing.confidence || 0.8;
+          const newConfidence = skill.confidence || 0.8;
+          existing.confidence = ((oldConfidence * oldOccurrences) + newConfidence) / newOccurrences;
+          existing.occurrences = newOccurrences;
+
+          // Merge evidence
+          if (!existing.evidence) existing.evidence = [];
+          existing.evidence = [...existing.evidence, ...evidenceArray];
+          existing.evidenceCount = existing.evidence.length;
+
+          if (!existing.sources.includes(source)) {
+            existing.sources.push(source);
+          }
+          updatedCount++;
+        }
+      });
+
+      const mergedSkills = Array.from(skillMap.values());
+
+      this.logger.log(`[PROFILE UPDATE] Skill merging completed - New: ${newCount}, Updated: ${updatedCount}, Total: ${mergedSkills.length}`);
+
+      // Update profile
+      await this.profileService.updateProfile(userId, {
+        skills: mergedSkills,
+        skillCount: mergedSkills.length,
+        sourcesConnected: this.countUniqueSources(mergedSkills),
+        updatedAt: new Date().toISOString(),
+      });
+
+      this.logger.log(`[PROFILE UPDATE] ✓ Profile updated successfully for user ${userId}`);
+    } catch (error: any) {
+      this.logger.error(`[PROFILE UPDATE] ✗ Failed: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
 
   async extractFromCV(userId: string, fileUrl: string) {
     this.logger.log(`Starting CV extraction for user: ${userId}`);
@@ -179,6 +346,10 @@ export class ExtractionService {
       });
       
       this.logger.log(`[PROFILE UPDATE] ✓ Profile updated successfully for user ${userId} - Total skills: ${mergedSkills.length}`);
+      
+      // Sync skills to vector database for semantic search
+      await this.profileService.syncSkillsToVectorStore(userId, mergedSkills);
+      
     } catch (error: any) {
       this.logger.error(`[PROFILE UPDATE] ✗ Failed to update profile: ${error.message}`, error.stack);
       throw error;
