@@ -54,7 +54,22 @@ export class ExtractionService {
 
     try {
       // Extract skills from GitHub
-      const skills = await this.githubConnector.extractSkillsFromGitHub(username);
+      const result = await this.githubConnector.extractSkillsFromGitHub(username);
+      
+      this.logger.debug(`[GITHUB JOB] Raw result from connector:`, JSON.stringify(result, null, 2));
+      
+      // Extract skills array from result object - ensure it's always an array
+      let skills = result.skills || [];
+      if (!Array.isArray(skills)) {
+        this.logger.warn(`[GITHUB JOB] Skills is not an array, attempting to convert:`, typeof skills);
+        // If it's a single object, wrap it in an array
+        if (typeof skills === 'object' && skills !== null) {
+          skills = [skills];
+        } else {
+          skills = [];
+        }
+      }
+      
       this.logger.log(`[GITHUB JOB] Extracted ${skills.length} skills from GitHub`);
 
       // Update user profile with skills
@@ -63,7 +78,9 @@ export class ExtractionService {
       return {
         success: true,
         skillsExtracted: skills.length,
-        message: `Successfully extracted ${skills.length} skills from GitHub`
+        languages: result.languages || [],
+        repoCount: result.repoCount || 0,
+        message: `Successfully extracted ${skills.length} skills from ${result.repoCount || 0} repositories`
       };
     } catch (error: any) {
       this.logger.error(`[GITHUB JOB] Failed: ${error.message}`, error.stack);
@@ -80,8 +97,24 @@ export class ExtractionService {
 
     try {
       // Extract skills from LinkedIn
-      const skills = await this.linkedinConnector.extractSkillsFromLinkedIn(profileUrl);
+      const result = await this.linkedinConnector.extractSkillsFromLinkedIn(profileUrl);
+      
+      this.logger.debug(`[LINKEDIN JOB] Raw result from connector:`, JSON.stringify(result, null, 2));
+      
+      // Extract skills array from result object - ensure it's always an array
+      let skills = result.skills || [];
+      if (!Array.isArray(skills)) {
+        this.logger.warn(`[LINKEDIN JOB] Skills is not an array, attempting to convert:`, typeof skills);
+        // If it's a single object, wrap it in an array
+        if (typeof skills === 'object' && skills !== null) {
+          skills = [skills];
+        } else {
+          skills = [];
+        }
+      }
+      
       this.logger.log(`[LINKEDIN JOB] Extracted ${skills.length} skills from LinkedIn`);
+      this.logger.debug(`[LINKEDIN JOB] Skills type: ${typeof skills}, isArray: ${Array.isArray(skills)}`);
 
       // Update user profile with skills
       await this.updateProfileWithSkills(userId, skills, 'linkedin');
@@ -89,7 +122,8 @@ export class ExtractionService {
       return {
         success: true,
         skillsExtracted: skills.length,
-        message: `Successfully extracted ${skills.length} skills from LinkedIn`
+        message: `Successfully extracted ${skills.length} skills from LinkedIn`,
+        metadata: result.metadata
       };
     } catch (error: any) {
       this.logger.error(`[LINKEDIN JOB] Failed: ${error.message}`, error.stack);
@@ -102,6 +136,19 @@ export class ExtractionService {
    */
   private async updateProfileWithSkills(userId: string, newSkills: any[], source: string): Promise<void> {
     try {
+      this.logger.log(`[PROFILE UPDATE] Starting update for user ${userId} with ${newSkills?.length || 0} skills from ${source}`);
+      
+      // Validate input
+      if (!Array.isArray(newSkills)) {
+        this.logger.error(`[PROFILE UPDATE] ✗ newSkills is not an array:`, typeof newSkills, newSkills);
+        throw new Error(`newSkills must be an array, received: ${typeof newSkills}`);
+      }
+
+      if (newSkills.length === 0) {
+        this.logger.warn(`[PROFILE UPDATE] No skills to update for ${source}`);
+        return;
+      }
+
       const profile: any = await this.profileService.getProfile(userId);
 
       if (!profile) {
@@ -169,11 +216,25 @@ export class ExtractionService {
 
       this.logger.log(`[PROFILE UPDATE] Skill merging completed - New: ${newCount}, Updated: ${updatedCount}, Total: ${mergedSkills.length}`);
 
-      // Update profile
+      // Get existing integrations or initialize
+      const existingIntegrations = profile.integrations || {};
+      
+      // Update integration metadata for this source
+      const integrationUpdate: any = {
+        lastSync: new Date().toISOString(),
+        skillsExtracted: newSkills.length,
+        status: 'connected'
+      };
+
+      // Update profile with skills and integration metadata
       await this.profileService.updateProfile(userId, {
         skills: mergedSkills,
         skillCount: mergedSkills.length,
         sourcesConnected: this.countUniqueSources(mergedSkills),
+        integrations: {
+          ...existingIntegrations,
+          [source]: integrationUpdate
+        },
         updatedAt: new Date().toISOString(),
       });
 

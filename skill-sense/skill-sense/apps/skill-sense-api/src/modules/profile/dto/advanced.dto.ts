@@ -1,13 +1,25 @@
 export class GenerateCVDto {
-  template: 'modern' | 'classic' | 'minimal' | 'technical';
-  format: 'pdf' | 'docx' | 'markdown';
-  includeSections: {
-    skills: boolean;
-    experience: boolean;
-    education: boolean;
-    projects: boolean;
-    certifications: boolean;
+  template?: 'modern' | 'classic' | 'minimal' | 'technical' | 'creative';
+  format?: 'pdf' | 'docx' | 'markdown' | 'html';
+  targetRole?: string;
+  sections?: {
+    summary?: boolean;
+    skills?: boolean;
+    evidence?: boolean;
+    certifications?: boolean;
+    achievements?: boolean;
+    experience?: boolean;
+    education?: boolean;
+    projects?: boolean;
   };
+  includeSections?: {
+    skills?: boolean;
+    experience?: boolean;
+    education?: boolean;
+    projects?: boolean;
+    certifications?: boolean;
+  };
+  emphasisCategories?: string[];
   customization?: {
     accentColor?: string;
     font?: string;

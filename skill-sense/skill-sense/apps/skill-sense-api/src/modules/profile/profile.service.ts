@@ -215,20 +215,26 @@ export class ProfileService {
     // Get recommendations from Vertex AI
     const recommendations = await this.vertexAI.recommendSkills(currentSkills, targetRole);
 
-    // Save recommendations
-    await this.firestore.createDocument('skill-recommendations', {
+    // Save recommendations (filter out undefined values for Firestore)
+    const recommendationData: any = {
       userId,
-      targetRole,
       ...recommendations,
       createdAt: new Date().toISOString(),
-    });
+    };
+    if (targetRole !== undefined) {
+      recommendationData.targetRole = targetRole;
+    }
+    await this.firestore.createDocument('skill-recommendations', recommendationData);
 
-    return {
+    const returnData: any = {
       userId,
-      targetRole,
       currentSkills,
       ...recommendations,
     };
+    if (targetRole !== undefined) {
+      returnData.targetRole = targetRole;
+    }
+    return returnData;
   }
 
   async getSkillTrends() {
@@ -247,8 +253,8 @@ export class ProfileService {
         };
       }
 
-      // Count skills
-      const skillCounts = new Map<string, number>();
+      // Count skills and gather categories
+      const skillCounts = new Map<string, { count: number; category: string }>();
       const categoryCounts = new Map<string, number>();
 
       profiles.forEach((profile: any) => {
@@ -256,27 +262,58 @@ export class ProfileService {
           const name = skill.name || skill;
           const category = skill.category || 'uncategorized';
 
-          skillCounts.set(name, (skillCounts.get(name) || 0) + 1);
+          const existing = skillCounts.get(name) || { count: 0, category };
+          skillCounts.set(name, { count: existing.count + 1, category });
           categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
         });
       });
 
-      // Sort by popularity
+      // Get market intelligence from Vertex AI for top skills
+      this.logger.debug(`Generating market intelligence for ${skillCounts.size} unique skills`);
+      const marketData = await this.generateMarketIntelligence(Array.from(skillCounts.keys()).slice(0, 30));
+
+      // Sort by popularity and enrich with market data
       const trending = Array.from(skillCounts.entries())
-        .map(([skill, count]) => ({
-          skill,
-          count,
-          percentage: ((count / profiles.length) * 100).toFixed(1),
-        }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 20);
+        .map(([skill, data]) => {
+          const marketInfo = marketData.get(skill) || {
+            demandChange: 0,
+            currentDemand: Math.min(100, (data.count / profiles.length) * 100),
+            salaryRange: { min: 50000, max: 120000 },
+            growthRate: 'stable' as const,
+            jobOpenings: data.count
+          };
+
+          return {
+            skill,
+            category: data.category,
+            count: data.count,
+            percentage: ((data.count / profiles.length) * 100).toFixed(1),
+            demandChange: marketInfo.demandChange,
+            currentDemand: Math.round(marketInfo.currentDemand),
+            salaryRange: marketInfo.salaryRange,
+            growthRate: marketInfo.growthRate,
+            jobOpenings: marketInfo.jobOpenings
+          };
+        })
+        .sort((a, b) => b.count - a.count);
 
       const topCategories = Array.from(categoryCounts.entries())
-        .map(([category, count]) => ({
-          category,
-          count,
-          percentage: ((count / profiles.length) * 100).toFixed(1),
-        }))
+        .map(([category, count]) => {
+          // Calculate average demand for skills in this category
+          const categorySkills = trending.filter(s => s.category === category);
+          const avgDemand = categorySkills.length > 0
+            ? categorySkills.reduce((sum, s) => sum + s.currentDemand, 0) / categorySkills.length
+            : 0;
+
+          return {
+            category,
+            count,
+            skillCount: categorySkills.length,
+            avgDemand: Math.round(avgDemand),
+            trending: avgDemand > 60,
+            percentage: ((count / profiles.length) * 100).toFixed(1),
+          };
+        })
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
 
@@ -296,25 +333,69 @@ export class ProfileService {
     }
   }
 
+  /**
+   * Generate market intelligence data for skills using Vertex AI
+   */
+  private async generateMarketIntelligence(skills: string[]): Promise<Map<string, any>> {
+    const marketData = new Map();
+
+    try {
+      const marketIntelligence = await this.vertexAI.generateMarketIntelligence(skills);
+      
+      // Convert to Map
+      Object.entries(marketIntelligence).forEach(([skill, data]) => {
+        marketData.set(skill, data);
+      });
+
+      this.logger.debug(`✓ Generated market intelligence for ${marketData.size} skills`);
+    } catch (error) {
+      this.logger.warn(`Failed to generate market intelligence: ${error.message}`);
+      // Return empty map - will use fallback data
+    }
+
+    return marketData;
+  }
+
   // ==================== CV GENERATION ====================
 
   async generateCV(userId: string, dto: GenerateCVDto) {
-    this.logger.log(`Generating CV for user ${userId} with template ${dto.template}`);
+    // Set defaults for optional fields
+    const template = dto.template || 'modern';
+    const format = dto.format || 'pdf';
+    const sections = dto.sections || dto.includeSections || {
+      skills: true,
+      experience: true,
+      education: true,
+      projects: true,
+      certifications: true
+    };
+
+    this.logger.log(`Generating CV for user ${userId} with template ${template}`);
 
     const profile: any = await this.getProfile(userId);
     if (!profile) {
       throw new Error('Profile not found');
     }
 
+    // Generate AI-powered CV content based on user's actual skills
+    const htmlContent = await this.vertexAI.generateCVContent(profile, {
+      template,
+      targetRole: dto.targetRole,
+      emphasisCategories: dto.emphasisCategories
+    });
+
     const cvId = `cv-${userId}-${Date.now()}`;
     const cv = {
       id: cvId,
       userId,
-      template: dto.template,
-      format: dto.format,
-      sections: dto.includeSections,
+      template,
+      format,
+      sections,
+      targetRole: dto.targetRole || '',
+      emphasisCategories: dto.emphasisCategories || [],
       customization: dto.customization || {},
       generatedAt: new Date().toISOString(),
+      content: htmlContent,
       profile: {
         name: profile.name || 'User',
         email: profile.email || '',
@@ -324,19 +405,41 @@ export class ProfileService {
 
     await this.firestore.createDocument('cvs', cv);
 
+    this.logger.log(`CV ${cvId} generated successfully with ${profile.skills?.length || 0} skills`);
+
     return cv;
   }
 
   async getRecentCVs(userId: string, limit: number = 10) {
     this.logger.log(`Fetching recent CVs for user ${userId}`);
 
-    const snapshot = await this.firestore.getCollection('cvs')
-      .where('userId', '==', userId)
-      .orderBy('generatedAt', 'desc')
-      .limit(limit)
-      .get();
+    try {
+      const snapshot = await this.firestore.getCollection('cvs')
+        .where('userId', '==', userId)
+        .orderBy('generatedAt', 'desc')
+        .limit(limit)
+        .get();
 
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      this.logger.error(`Error fetching CVs: ${error.message}`);
+      
+      // Fallback: fetch all CVs for user and sort in memory
+      const allDocs = await this.firestore.getCollection('cvs')
+        .where('userId', '==', userId)
+        .get();
+      
+      const cvs = allDocs.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.generatedAt || 0).getTime();
+          const dateB = new Date(b.generatedAt || 0).getTime();
+          return dateB - dateA;
+        })
+        .slice(0, limit);
+      
+      return cvs;
+    }
   }
 
   async getCVById(cvId: string) {

@@ -93,6 +93,18 @@ export class ProfileController {
     return this.profileService.searchSkillsSemantic(query, searchUserId, limit);
   }
 
+  @Get(':id/similar-profiles')
+  @ApiOperation({ summary: 'Find similar profiles for networking using vector similarity' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Max results (default: 10)' })
+  @ApiResponse({ status: 200, description: 'Returns similar user profiles based on skills and experience' })
+  async findSimilarProfiles(
+    @Param('id') userId: string,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.profileService.findSimilarProfiles(userId, limit);
+  }
+
   @Get(':id/export')
   @ApiOperation({ summary: 'Export user skills as JSON or CSV' })
   @ApiParam({ name: 'id', description: 'User ID' })

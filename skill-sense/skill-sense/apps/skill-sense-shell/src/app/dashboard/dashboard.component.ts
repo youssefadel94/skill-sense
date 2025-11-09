@@ -195,6 +195,81 @@ interface DashboardStats {
             </article>
           </div>
         </section>
+
+        <section class="networking surface-card">
+          <header class="section-header">
+            <div>
+              <h2>🤝 Similar Profiles for Networking</h2>
+              <p class="text-subtle">Connect with professionals who share similar skills and interests</p>
+            </div>
+            <button (click)="loadSimilarProfiles()" [disabled]="loadingProfiles" class="btn btn-secondary">
+              {{ loadingProfiles ? 'Loading...' : 'Find Connections' }}
+            </button>
+          </header>
+
+          @if (loadingProfiles) {
+            <div class="profiles-loading">
+              <div class="loader"></div>
+              <p>Finding similar profiles using AI vector search...</p>
+            </div>
+          } @else if (profilesError) {
+            <div class="alert alert-error">
+              <strong>Error:</strong> {{ profilesError }}
+            </div>
+          } @else if (similarProfiles.length > 0) {
+            <div class="profiles-grid">
+              @for (profile of similarProfiles; track profile.userId) {
+                <article class="profile-card">
+                  <div class="profile-card__header">
+                    <div class="profile-avatar">
+                      @if (profile.profilePicture) {
+                        <img [src]="profile.profilePicture" [alt]="profile.name">
+                      } @else {
+                        <span class="profile-avatar-placeholder">{{ getInitials(profile.name) }}</span>
+                      }
+                    </div>
+                    <div class="profile-card__info">
+                      <h3>{{ profile.name }}</h3>
+                      <p class="profile-title">{{ profile.title }}</p>
+                      @if (profile.location) {
+                        <p class="profile-location">📍 {{ profile.location }}</p>
+                      }
+                    </div>
+                    <div class="similarity-badge">
+                      <span class="similarity-score">{{ profile.similarityScore }}%</span>
+                      <span class="similarity-label">match</span>
+                    </div>
+                  </div>
+                  <div class="profile-card__skills">
+                    <h4>Matching Skills</h4>
+                    <div class="skill-tags">
+                      @for (skill of profile.matchingSkills.slice(0, 5); track skill) {
+                        <span class="skill-tag">{{ skill }}</span>
+                      }
+                      @if (profile.matchingSkills.length > 5) {
+                        <span class="skill-tag-more">+{{ profile.matchingSkills.length - 5 }} more</span>
+                      }
+                    </div>
+                  </div>
+                  <div class="profile-card__actions">
+                    <button class="btn btn-sm btn-primary" (click)="viewProfile(profile.userId)">
+                      View Profile
+                    </button>
+                    <button class="btn btn-sm btn-ghost" (click)="connectWithProfile(profile)">
+                      Connect
+                    </button>
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">
+              <span class="empty-state__icon">🔍</span>
+              <h3>Discover connections</h3>
+              <p>Click "Find Connections" to discover professionals with similar skills using AI-powered vector search</p>
+            </div>
+          }
+        </section>
       }
     </div>
   `,
@@ -552,6 +627,202 @@ interface DashboardStats {
       line-height: 1.6;
     }
 
+    /* Networking Section */
+    .networking {
+      display: grid;
+      gap: 28px;
+    }
+
+    .profiles-loading {
+      text-align: center;
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profiles-loading p {
+      color: var(--color-text-muted);
+      font-size: 0.9375rem;
+    }
+
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .profile-card {
+      padding: 24px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-strong);
+      background: var(--color-surface-alt);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .profile-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .profile-card__header {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .profile-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-avatar-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    .profile-card__info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-card__info h3 {
+      margin: 0 0 4px 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--color-text-strong);
+    }
+
+    .profile-title {
+      margin: 0 0 4px 0;
+      color: var(--color-text-muted);
+      font-size: 0.9375rem;
+    }
+
+    .profile-location {
+      margin: 0;
+      color: var(--color-text-subtle);
+      font-size: 0.8125rem;
+    }
+
+    .similarity-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 12px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius);
+    }
+
+    .similarity-score {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .similarity-label {
+      font-size: 0.75rem;
+      color: var(--color-text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .profile-card__skills h4 {
+      margin: 0 0 12px 0;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--color-text);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .skill-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .skill-tag {
+      display: inline-block;
+      padding: 6px 12px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .skill-tag-more {
+      display: inline-block;
+      padding: 6px 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--color-text-subtle);
+    }
+
+    .profile-card__actions {
+      display: flex;
+      gap: 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .empty-state__icon {
+      font-size: 3rem;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .empty-state p {
+      margin: 0;
+      color: var(--color-text-muted);
+      max-width: 400px;
+    }
+
     @media (max-width: 960px) {
       .dashboard-hero {
         grid-template-columns: 1fr;
@@ -566,6 +837,10 @@ interface DashboardStats {
 
       .stats-section {
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .profiles-grid {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -619,6 +894,11 @@ export class DashboardComponent implements OnInit {
     gapsIdentified: 0,
     confidenceAverage: 0
   };
+
+  // Networking
+  loadingProfiles = false;
+  profilesError = '';
+  similarProfiles: any[] = [];
 
   ngOnInit() {
     this.loadDashboardData();
@@ -693,6 +973,51 @@ export class DashboardComponent implements OnInit {
     } catch (err: any) {
       this.error = err.message || 'Failed to logout';
     }
+  }
+
+  async loadSimilarProfiles() {
+    try {
+      this.loadingProfiles = true;
+      this.profilesError = '';
+
+      const userId = await this.authService.getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      this.apiService.findSimilarProfiles(userId, 10).subscribe({
+        next: (profiles) => {
+          this.similarProfiles = profiles;
+          this.loadingProfiles = false;
+        },
+        error: (err) => {
+          console.error('Failed to load similar profiles:', err);
+          this.profilesError = err.message || 'Failed to load similar profiles';
+          this.loadingProfiles = false;
+        }
+      });
+    } catch (err: any) {
+      this.profilesError = err.message || 'Failed to load similar profiles';
+      this.loadingProfiles = false;
+    }
+  }
+
+  getInitials(name: string): string {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  }
+
+  viewProfile(userId: string) {
+    this.router.navigate(['/profile', userId]);
+  }
+
+  connectWithProfile(profile: any) {
+    // In a real app, this would send a connection request
+    alert(`Connection request sent to ${profile.name}!`);
   }
 
   private delay(ms: number): Promise<void> {

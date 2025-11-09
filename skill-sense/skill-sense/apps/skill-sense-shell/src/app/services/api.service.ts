@@ -285,7 +285,7 @@ export class ApiService {
   findSimilarProfiles(userId: string, limit?: number): Observable<any> {
     const params = limit ? `?limit=${limit}` : '';
     return this.getAuthHeaders().pipe(
-      switchMap((headers) => this.http.get(`${this.apiUrl}/search/similar-profiles/${userId}${params}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/similar-profiles${params}`, { headers }))
     );
   }
 
@@ -323,7 +323,7 @@ export class ApiService {
 
   downloadCV(cvId: string): Observable<Blob> {
     return this.getAuthHeaders().pipe(
-      switchMap((headers) => this.http.get(`${this.apiUrl}/cv/${cvId}/download`, {
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/cv/${cvId}/download`, {
           headers,
           responseType: 'blob'
         }))
