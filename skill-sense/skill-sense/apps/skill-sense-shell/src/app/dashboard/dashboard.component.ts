@@ -16,234 +16,489 @@ interface DashboardStats {
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="dashboard-container">
-      <header class="dashboard-header">
-        <h1>Welcome to SkillSense</h1>
-        <button (click)="logout()" class="btn btn-secondary">Logout</button>
-      </header>
+    <div class="dashboard-screen">
+      <section class="dashboard-hero glass-panel">
+        <div class="dashboard-hero__content">
+          <span class="badge">Overview</span>
+          <h1>Welcome back to SkillSense</h1>
+          <p class="hero-copy">
+            Keep an eye on your evolving capabilities and decide your next strategic move in seconds.
+          </p>
+          <div class="hero-metrics">
+            <div class="hero-metric">
+              <span class="hero-metric__label">Average confidence</span>
+              <strong>{{ stats.confidenceAverage }}%</strong>
+            </div>
+            <div class="hero-metric">
+              <span class="hero-metric__label">Active skills</span>
+              <strong>{{ stats.totalSkills }}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-hero__actions">
+          <a [routerLink]="['/upload']" class="btn btn-primary">Upload new evidence</a>
+          <button (click)="logout()" class="btn btn-ghost">Logout</button>
+        </div>
+      </section>
 
       @if (loading) {
-        <div class="loading">
-          <div class="spinner"></div>
-          <p>Loading your dashboard...</p>
+        <div class="dashboard-loading">
+          <div class="loader"></div>
+          <div class="loading-text">
+            <span class="skeleton-line" style="width: 220px"></span>
+            <span class="skeleton-line" style="width: 180px"></span>
+          </div>
         </div>
       } @else if (error) {
-        <div class="alert alert-error">{{ error }}</div>
+        <div class="alert alert-error dashboard-alert">
+          <div>
+            <strong>We could not refresh your insights.</strong>
+            <p>{{ error }}</p>
+          </div>
+          <button class="btn btn-secondary" type="button" (click)="loadDashboardData()">Try again</button>
+        </div>
       } @else {
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-value">{{ stats.totalSkills }}</div>
-            <div class="stat-label">Total Skills</div>
+        <section class="stats-section">
+          <article class="stat-card">
+            <div class="stat-card__icon">📊</div>
+            <div class="stat-card__content">
+              <span class="stat-card__label">Total skills tracked</span>
+              <strong class="stat-card__value">{{ stats.totalSkills }}</strong>
+              <p>Across every connected data source.</p>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-card__icon">�</div>
+            <div class="stat-card__content">
+              <span class="stat-card__label">Sources analyzed</span>
+              <strong class="stat-card__value">{{ stats.profilesAnalyzed }}</strong>
+              <p>CVs, repositories, and professional profiles.</p>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-card__icon">🎯</div>
+            <div class="stat-card__content">
+              <span class="stat-card__label">Skill gaps detected</span>
+              <strong class="stat-card__value">{{ stats.gapsIdentified }}</strong>
+              <p>High-impact areas to focus your next sprint.</p>
+            </div>
+          </article>
+
+          <article class="stat-card">
+            <div class="stat-card__icon">✨</div>
+            <div class="stat-card__content">
+              <span class="stat-card__label">Confidence momentum</span>
+              <strong class="stat-card__value">{{ stats.confidenceAverage }}%</strong>
+              <p>Measured from verified occurrences this month.</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="actions-section surface-card">
+          <header class="section-header">
+            <div>
+              <h2>Do more with your profile</h2>
+              <p class="text-subtle">Select a workspace to drill deeper or create new deliverables.</p>
+            </div>
+          </header>
+          <div class="action-grid">
+            <a [routerLink]="['/profile']" class="action-card">
+              <span class="action-card__icon">�</span>
+              <div>
+                <h3>Review your profile</h3>
+                <p>Explore confidence scores & supporting evidence.</p>
+              </div>
+            </a>
+            <a [routerLink]="['/gaps']" class="action-card">
+              <span class="action-card__icon">�</span>
+              <div>
+                <h3>Analyze skill gaps</h3>
+                <p>Map target roles and pinpoint what to work on next.</p>
+              </div>
+            </a>
+            <a [routerLink]="['/recommendations']" class="action-card">
+              <span class="action-card__icon">�</span>
+              <div>
+                <h3>Get learning nudges</h3>
+                <p>Receive curated courses and projects tailored to you.</p>
+              </div>
+            </a>
+            <a [routerLink]="['/cv-generator']" class="action-card">
+              <span class="action-card__icon">�</span>
+              <div>
+                <h3>Generate a CV</h3>
+                <p>Produce role-specific CVs with compelling narratives.</p>
+              </div>
+            </a>
+            <a [routerLink]="['/role-matcher']" class="action-card">
+              <span class="action-card__icon">🎯</span>
+              <div>
+                <h3>Match to open roles</h3>
+                <p>See where you already shine and where to iterate.</p>
+              </div>
+            </a>
+            <a [routerLink]="['/learning-paths']" class="action-card">
+              <span class="action-card__icon">🎓</span>
+              <div>
+                <h3>Build learning paths</h3>
+                <p>Design sustainable progression plans with milestones.</p>
+              </div>
+            </a>
+            <a [routerLink]="['/trends']" class="action-card">
+              <span class="action-card__icon">📈</span>
+              <div>
+                <h3>Watch market signals</h3>
+                <p>Stay alert to rising and fading competencies.</p>
+              </div>
+            </a>
+            <a [routerLink]="['/upload']" class="action-card">
+              <span class="action-card__icon">📄</span>
+              <div>
+                <h3>Upload another CV</h3>
+                <p>Feed fresh experiences to keep insights relevant.</p>
+              </div>
+            </a>
           </div>
+        </section>
 
-          <div class="stat-card">
-            <div class="stat-icon">📁</div>
-            <div class="stat-value">{{ stats.profilesAnalyzed }}</div>
-            <div class="stat-label">Sources Analyzed</div>
+        <section class="insights surface-card">
+          <header class="section-header">
+            <div>
+              <h2>Focus suggestions</h2>
+              <p class="text-subtle">Use these prompts to keep momentum between check-ins.</p>
+            </div>
+          </header>
+          <div class="insight-grid">
+            <article class="insight-card">
+              <span class="insight-card__badge">Verification tip</span>
+              <h3>Strengthen evidence for emerging skills</h3>
+              <p>Revisit recent project notes or repositories to tag achievements that support your confidence score.</p>
+            </article>
+            <article class="insight-card">
+              <span class="insight-card__badge">Opportunity</span>
+              <h3>Create a quick learning sprint</h3>
+              <p>Pick a high-demand skill from gaps and add a 14-day learning plan in the Learning Paths workspace.</p>
+            </article>
+            <article class="insight-card">
+              <span class="insight-card__badge">Signal</span>
+              <h3>Share your profile snapshot</h3>
+              <p>Export the latest CV draft and send it to a mentor or teammate for feedback on positioning.</p>
+            </article>
           </div>
-
-          <div class="stat-card">
-            <div class="stat-icon">🎯</div>
-            <div class="stat-value">{{ stats.gapsIdentified }}</div>
-            <div class="stat-label">Skill Gaps</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon">✨</div>
-            <div class="stat-value">{{ stats.confidenceAverage }}%</div>
-            <div class="stat-label">Avg Confidence</div>
-          </div>
-        </div>
-
-        <div class="action-grid">
-          <a [routerLink]="['/upload']" class="action-card">
-            <div class="action-icon">📄</div>
-            <h3>Upload CV</h3>
-            <p>Extract skills from your resume</p>
-          </a>
-
-          <a [routerLink]="['/profile']" class="action-card">
-            <div class="action-icon">👤</div>
-            <h3>View Profile</h3>
-            <p>See your complete skill profile</p>
-          </a>
-
-          <a [routerLink]="['/gaps']" class="action-card">
-            <div class="action-icon">🔍</div>
-            <h3>Analyze Gaps</h3>
-            <p>Find skill gaps for target roles</p>
-          </a>
-
-          <a [routerLink]="['/recommendations']" class="action-card">
-            <div class="action-icon">💡</div>
-            <h3>Get Recommendations</h3>
-            <p>Discover new skills to learn</p>
-          </a>
-
-          <a [routerLink]="['/trends']" class="action-card">
-            <div class="action-icon">📈</div>
-            <h3>Market Trends</h3>
-            <p>Track skill demand and insights</p>
-          </a>
-
-          <a [routerLink]="['/cv-generator']" class="action-card">
-            <div class="action-icon">📝</div>
-            <h3>Generate CV</h3>
-            <p>AI-powered resume builder</p>
-          </a>
-
-          <a [routerLink]="['/role-matcher']" class="action-card">
-            <div class="action-icon">🎯</div>
-            <h3>Match Roles</h3>
-            <p>Find jobs that fit your skills</p>
-          </a>
-
-          <a [routerLink]="['/learning-paths']" class="action-card">
-            <div class="action-icon">🎓</div>
-            <h3>Learning Paths</h3>
-            <p>Personalized skill roadmaps</p>
-          </a>
-        </div>
+        </section>
       }
     </div>
   `,
   styles: [`
-    .dashboard-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
+    :host {
+      display: block;
     }
 
-    .dashboard-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 40px;
+    .dashboard-screen {
+      display: grid;
+      gap: 28px;
+      padding: 12px 0 48px;
     }
 
-    .dashboard-header h1 {
+    .dashboard-hero {
+      display: grid;
+      grid-template-columns: 1.3fr auto;
+      gap: 32px;
+      padding: 40px 44px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dashboard-hero::after {
+      content: '';
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -40px;
+      bottom: -60px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.42) 0, rgba(99, 102, 241, 0));
+      filter: blur(10px);
+    }
+
+    .dashboard-hero__content {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 18px;
+    }
+
+    .dashboard-hero__content h1 {
       margin: 0;
-      color: #333;
-      font-size: 32px;
+      font-size: clamp(2rem, 2.6vw, 2.8rem);
+      line-height: 1.1;
     }
 
-    .loading {
-      text-align: center;
-      padding: 60px 20px;
+    .hero-copy {
+      margin: 0;
+      color: var(--color-text-muted);
+      max-width: 520px;
     }
 
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 18px;
+      margin-top: 12px;
+    }
+
+    .hero-metric {
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .hero-metric__label {
+      color: var(--color-text-subtle);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .hero-metric strong {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .dashboard-hero__actions {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .dashboard-loading {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 46px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      background: rgba(15, 23, 42, 0.45);
+      min-height: 180px;
+    }
+
+    .loader {
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      width: 50px;
-      height: 50px;
+      border: 4px solid rgba(148, 163, 184, 0.18);
+      border-top-color: rgba(99, 102, 241, 0.75);
       animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
+    }
+
+    .loading-text {
+      display: grid;
+      gap: 12px;
+      width: 100%;
+      max-width: 280px;
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
-    .stats-grid {
+    .dashboard-alert {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .dashboard-alert p {
+      margin: 6px 0 0;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+    }
+
+    .stats-section {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 20px;
-      margin-bottom: 40px;
     }
 
     .stat-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      position: relative;
+      overflow: hidden;
+      padding: 28px 26px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      background: linear-gradient(130deg, rgba(99, 102, 241, 0.28), rgba(15, 23, 42, 0.75));
+      box-shadow: var(--shadow-sm);
+      display: grid;
+      gap: 12px;
     }
 
-    .stat-icon {
-      font-size: 48px;
-      margin-bottom: 15px;
-    }
-
-    .stat-value {
-      font-size: 36px;
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
-
-    .stat-label {
-      font-size: 14px;
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(148, 163, 184, 0.18), transparent 55%);
       opacity: 0.9;
+    }
+
+    .stat-card__icon {
+      font-size: 28px;
+      z-index: 1;
+    }
+
+    .stat-card__content {
+      z-index: 1;
+      display: grid;
+      gap: 6px;
+    }
+
+    .stat-card__label {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(226, 232, 240, 0.78);
+    }
+
+    .stat-card__value {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+
+    .stat-card__content p {
+      margin: 0;
+      color: rgba(226, 232, 240, 0.75);
+      font-size: 0.9rem;
+    }
+
+    .actions-section {
+      display: grid;
+      gap: 24px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    .section-header p {
+      margin: 4px 0 0;
     }
 
     .action-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
     }
 
     .action-card {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      text-decoration: none;
+      display: flex;
+      gap: 16px;
+      padding: 20px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.6);
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
       color: inherit;
-      transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .action-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      transform: translateY(-4px);
+      border-color: rgba(99, 102, 241, 0.45);
+      background: rgba(15, 23, 42, 0.74);
     }
 
-    .action-icon {
-      font-size: 48px;
-      margin-bottom: 15px;
+    .action-card__icon {
+      font-size: 26px;
+      line-height: 1;
     }
 
     .action-card h3 {
-      margin: 0 0 10px 0;
-      color: #333;
-      font-size: 20px;
+      margin: 0 0 6px;
+      font-size: 1.1rem;
     }
 
     .action-card p {
       margin: 0;
-      color: #666;
-      font-size: 14px;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
     }
 
-    .alert-error {
-      background: #fee;
-      color: #c33;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+    .insights {
+      display: grid;
+      gap: 24px;
     }
 
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: background 0.2s;
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
     }
 
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
+    .insight-card {
+      padding: 24px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.6);
+      display: grid;
+      gap: 12px;
     }
 
-    .btn-secondary:hover {
-      background: #5a6268;
+    .insight-card__badge {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-subtle);
+    }
+
+    .insight-card h3 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .insight-card p {
+      margin: 0;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 960px) {
+      .dashboard-hero {
+        grid-template-columns: 1fr;
+        padding: 34px 30px;
+      }
+
+      .dashboard-hero__actions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .dashboard-screen {
+        gap: 22px;
+      }
+
+      .dashboard-hero {
+        padding: 26px 22px;
+      }
+
+      .dashboard-hero__actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .action-card {
+        flex-direction: column;
+      }
     }
   `]
 })

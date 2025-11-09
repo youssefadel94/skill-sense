@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, from, switchMap, catchError, throwError, map, shareReplay } from 'rxjs';
+import { Observable, from, switchMap, catchError, throwError, map, shareReplay, tap } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -35,8 +35,18 @@ export class ApiService {
   }
 
   getProfile(userId: string): Observable<any> {
+    console.log('[API SERVICE] getProfile called for userId:', userId);
     return this.getAuthHeaders().pipe(
-      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}`, { headers }))
+      switchMap((headers) => {
+        const url = `${this.apiUrl}/profiles/${userId}`;
+        console.log('[API SERVICE] Fetching profile from:', url);
+        return this.http.get(url, { headers });
+      }),
+      tap((response: any) => console.log('[API SERVICE] ✓ Profile response:', response)),
+      catchError((error: any) => {
+        console.error('[API SERVICE] ✗ Profile fetch error:', error);
+        throw error;
+      })
     );
   }
 
