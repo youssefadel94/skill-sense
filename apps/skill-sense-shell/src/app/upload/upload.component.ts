@@ -438,7 +438,7 @@ export class UploadComponent {
     try {
       this.uploading = true;
       this.error = '';
-      this.uploadStatus = 'Uploading file...';
+      this.uploadStatus = 'Uploading file to cloud storage...';
 
       const userId = this.authService.getUserId();
       if (!userId || !this.selectedFile) {
@@ -447,25 +447,29 @@ export class UploadComponent {
 
       this.apiService.extractFromCV(userId, this.selectedFile).subscribe({
         next: (response) => {
+          console.log('CV extraction response:', response);
           this.uploadStatus = 'Skills extracted successfully!';
           this.result = {
             jobId: response.jobId || 'completed',
             status: 'completed',
-            skillsFound: response.skills?.length || response.skillsFound || 0,
-            message: response.message || 'Skills extracted successfully'
+            skillsFound: response.skillsFound || response.result?.skills?.length || 0,
+            message: response.message || `Extracted ${response.skillsFound || 0} skills from your CV`
           };
           this.uploading = false;
+
+          // Log success
+          console.log(`Successfully extracted ${this.result.skillsFound} skills`);
         },
         error: (err) => {
           console.error('CV extraction failed:', err);
-          this.error = err.message || 'Failed to extract skills from CV';
+          this.error = err.error?.message || err.message || 'Failed to extract skills from CV';
           this.uploading = false;
         }
       });
 
     } catch (err: any) {
+      console.error('Upload error:', err);
       this.error = err.message || 'Failed to upload file';
-    } finally {
       this.uploading = false;
     }
   }

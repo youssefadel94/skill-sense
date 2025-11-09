@@ -45,6 +45,14 @@ export class ProfileService {
     return this.firestore.getDocument(this.collection, id);
   }
 
+  async updateProfile(id: string, data: any) {
+    this.logger.log(`Updating profile: ${id}`);
+    return this.firestore.updateDocument(this.collection, id, {
+      ...data,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
   async listProfiles() {
     this.logger.log('Listing all profiles');
     const snapshot = await this.firestore.getCollection(this.collection).get();

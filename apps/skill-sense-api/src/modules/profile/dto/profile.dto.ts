@@ -3,6 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProfileDto {
   @ApiProperty({
+    description: 'Firebase user ID',
+    example: 'p8N0gyu0YDO6FYBRebvqnLyHP5D2',
+  })
+  @IsString()
+  @IsNotEmpty()
+  userId: string;
+
+  @ApiProperty({
     description: 'User full name',
     example: 'John Doe',
   })

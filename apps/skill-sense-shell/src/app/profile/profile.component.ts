@@ -13,6 +13,7 @@ interface Profile {
   updatedAt: Date;
   skillCount: number;
   sourcesConnected: number;
+  cvs?: CV[];
 }
 
 interface Skill {
@@ -23,6 +24,14 @@ interface Skill {
   verified: boolean;
   occurrences: number;
   evidenceCount: number;
+}
+
+interface CV {
+  fileName: string;
+  fileType: string;
+  gcsUri: string;
+  uploadedAt: string;
+  skillsExtracted: number;
 }
 
 @Component({
@@ -52,9 +61,31 @@ interface Skill {
               <span>{{ profile.skillCount }} skills</span>
               <span>•</span>
               <span>{{ profile.sourcesConnected }} sources</span>
+              @if (profile.cvs && profile.cvs.length > 0) {
+                <span>•</span>
+                <span>{{ profile.cvs.length }} CV{{ profile.cvs.length > 1 ? 's' : '' }}</span>
+              }
             </div>
           </div>
         </div>
+
+        @if (profile.cvs && profile.cvs.length > 0) {
+          <div class="cvs-section">
+            <h2>Uploaded CVs</h2>
+            <div class="cvs-grid">
+              @for (cv of profile.cvs; track cv.gcsUri) {
+                <div class="cv-card">
+                  <div class="cv-icon">📄</div>
+                  <div class="cv-info">
+                    <h3>{{ cv.fileName }}</h3>
+                    <p class="cv-date">Uploaded {{ formatDate(cv.uploadedAt) }}</p>
+                    <p class="cv-stats">{{ cv.skillsExtracted }} skills extracted</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
 
         <div class="skills-section">
           <div class="section-header">
@@ -387,7 +418,8 @@ export class ProfileComponent implements OnInit {
             createdAt: profileData.createdAt ? new Date(profileData.createdAt) : new Date(),
             updatedAt: profileData.updatedAt ? new Date(profileData.updatedAt) : new Date(),
             skillCount: profileData.skills?.length || 0,
-            sourcesConnected: profileData.sourcesConnected || 0
+            sourcesConnected: profileData.sourcesConnected || 0,
+            cvs: profileData.cvs || []
           };
 
           this.skills = (profileData.skills || []).map((skill: any) => ({
@@ -423,6 +455,20 @@ export class ProfileComponent implements OnInit {
     } else {
       this.filteredSkills = [...this.skills];
     }
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return date.toLocaleDateString();
   }
 
   private generateMockSkills(): Skill[] {

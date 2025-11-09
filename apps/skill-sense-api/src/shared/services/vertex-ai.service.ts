@@ -25,7 +25,7 @@ export class VertexAIService {
   private readonly client: PredictionServiceClient;
   private readonly project: string;
   private readonly location: string;
-  private readonly model: string = 'gemini-1.5-flash';
+  private readonly model: string = 'gemini-2.0-flash-lite-001';
 
   constructor() {
     this.client = new PredictionServiceClient({
