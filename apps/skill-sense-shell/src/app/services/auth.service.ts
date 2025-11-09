@@ -1,5 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from '@angular/fire/auth';
+import {
+  Auth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+  confirmPasswordReset,
+  User
+} from '@angular/fire/auth';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
@@ -40,6 +48,22 @@ export class AuthService {
       await signOut(this.auth);
     } catch (error: any) {
       throw new Error(error.message);
+    }
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(this.auth, email);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to send password reset email');
+    }
+  }
+
+  async resetPassword(oobCode: string, newPassword: string): Promise<void> {
+    try {
+      await confirmPasswordReset(this.auth, oobCode, newPassword);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to reset password');
     }
   }
 
