@@ -70,4 +70,18 @@ export class WeaviateService {
     const result = await queryBuilder.do();
     return result.data.Get.Skill || [];
   }
+
+  async isReady(): Promise<boolean> {
+    try {
+      const result = await this.client.misc.metaGetter().do();
+      return !!result;
+    } catch (error) {
+      this.logger.error('Weaviate not ready', error.message);
+      return false;
+    }
+  }
+
+  getClient(): WeaviateClient {
+    return this.client;
+  }
 }

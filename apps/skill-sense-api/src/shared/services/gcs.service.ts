@@ -15,7 +15,7 @@ export class GcsService {
     this.logger.log('GCS service initialized');
   }
 
-  async uploadFile(file: Buffer, filename: string, contentType: string): Promise<string> {
+  async uploadFile(file: Buffer, filename: string, contentType: string = 'application/octet-stream'): Promise<string> {
     const bucket = this.storage.bucket(this.bucketName);
     const blob = bucket.file(filename);
 
@@ -26,9 +26,10 @@ export class GcsService {
       },
     });
 
-    const publicUrl = `https://storage.googleapis.com/${this.bucketName}/${filename}`;
-    this.logger.log(`File uploaded: ${publicUrl}`);
-    return publicUrl;
+    // Return GCS URI format for Vertex AI
+    const gcsUri = `gs://${this.bucketName}/${filename}`;
+    this.logger.log(`File uploaded: ${gcsUri}`);
+    return gcsUri;
   }
 
   async downloadFile(filename: string): Promise<Buffer> {

@@ -64,6 +64,47 @@ export class VertexAIService {
     }
   }
 
+  /**
+   * Extract skills from PDF/DOCX file stored in GCS
+   * Uses Gemini's native document processing
+   */
+  async extractSkillsFromDocument(gcsUri: string): Promise<SkillExtractionResult> {
+    this.logger.debug(`Extracting skills from document: ${gcsUri}`);
+    
+    if (!this.project) {
+      this.logger.warn('GCP_PROJECT_ID not set, using mock data');
+      return this.getMockSkills('Document upload (mock mode)');
+    }
+
+    try {
+      const prompt = `You are an expert career analyst. Extract all technical and professional skills from the attached CV/Resume document.
+
+For each skill, provide:
+1. name: The specific skill name
+2. category: One of: "programming_language", "framework", "tool", "soft_skill", "domain_knowledge", "certification", "methodology"
+3. proficiency: Estimate based on context: "beginner", "intermediate", "advanced", or "expert"
+4. evidence: A brief quote from the document
+5. confidence: A score from 0.0 to 1.0
+
+Return ONLY a valid JSON array of skill objects.`;
+
+      const response = await this.callGeminiWithDocument(prompt, gcsUri);
+      const skills = this.parseSkillsResponse(response);
+
+      return {
+        skills,
+        metadata: {
+          model: this.model,
+          timestamp: new Date().toISOString(),
+          textLength: 0, // Document length unknown
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Document extraction failed: ${error.message}`, error.stack);
+      return this.getMockSkills('Document upload (error fallback)');
+    }
+  }
+
   async generateEmbedding(text: string): Promise<number[]> {
     this.logger.debug(`Generating embedding for text (${text.length} chars)`);
     
@@ -129,6 +170,53 @@ export class VertexAIService {
       throw new Error('No predictions returned from Gemini');
     } catch (error) {
       this.logger.error(`Gemini API call failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Call Gemini with document from GCS
+   * Supports PDF, DOCX, and other document formats
+   */
+  private async callGeminiWithDocument(prompt: string, gcsUri: string): Promise<string> {
+    const endpoint = `projects/${this.project}/locations/${this.location}/publishers/google/models/${this.model}`;
+    
+    // Format GCS URI properly (must start with gs://)
+    const formattedUri = gcsUri.startsWith('gs://') 
+      ? gcsUri 
+      : `gs://${gcsUri.replace(/^https?:\/\/storage\.googleapis\.com\//, '')}`;
+
+    this.logger.debug(`Using GCS URI: ${formattedUri}`);
+
+    const parameters = {
+      temperature: 0.2,
+      maxOutputTokens: 2048,
+      topP: 0.8,
+      topK: 40,
+    };
+
+    const request = {
+      endpoint,
+      instances: [{
+        content: prompt,
+        document: {
+          gcsUri: formattedUri,
+        },
+      }],
+      parameters,
+    };
+
+    try {
+      const [response] = await this.client.predict(request as any);
+      const predictions = response.predictions as any[];
+      
+      if (predictions && predictions.length > 0) {
+        return predictions[0].content || predictions[0].text || JSON.stringify(predictions[0]);
+      }
+
+      throw new Error('No predictions returned from Gemini');
+    } catch (error) {
+      this.logger.error(`Gemini document API call failed: ${error.message}`);
       throw error;
     }
   }
@@ -240,5 +328,122 @@ JSON response:`;
   private getMockEmbedding(): number[] {
     // Return a mock 768-dimensional embedding (typical for text-embedding-gecko)
     return Array.from({ length: 768 }, () => Math.random() * 2 - 1);
+  }
+
+  /**
+   * Analyze skill gaps for a target role
+   */
+  async analyzeSkillGaps(
+    currentSkills: string[],
+    targetRole: string,
+  ): Promise<any> {
+    this.logger.debug(`Analyzing skill gaps for ${targetRole}`);
+
+    const prompt = `You are a career development expert. Analyze skill gaps for someone targeting this role.
+
+Target Role: ${targetRole}
+Current Skills: ${currentSkills.join(', ')}
+
+Provide a comprehensive skill gap analysis including:
+1. Missing critical skills
+2. Skills that need improvement
+3. Priority levels (critical, high, medium, low)
+4. Estimated time to acquire each skill
+5. Recommended learning resources
+
+Return ONLY a valid JSON object with this structure:
+{
+  "gaps": [
+    {
+      "skill": "skill name",
+      "category": "programming_language|framework|tool|soft_skill|domain_knowledge",
+      "currentLevel": "none|beginner|intermediate|advanced|expert",
+      "requiredLevel": "beginner|intermediate|advanced|expert",
+      "priority": "critical|high|medium|low",
+      "timeToAcquire": "e.g., 2-3 months",
+      "resources": ["resource 1", "resource 2"]
+    }
+  ],
+  "summary": "overall assessment summary in 2-3 sentences"
+}
+
+Return JSON only, no markdown formatting.`;
+
+    try {
+      const response = await this.callGemini(prompt);
+      const parsed = this.parseJSON(response);
+      return parsed;
+    } catch (error) {
+      this.logger.error(`Skill gap analysis failed: ${error.message}`);
+      return {
+        gaps: [],
+        summary: 'Analysis failed. Please try again or check your configuration.',
+      };
+    }
+  }
+
+  /**
+   * Recommend next skills to learn
+   */
+  async recommendSkills(
+    currentSkills: string[],
+    targetRole?: string,
+  ): Promise<any> {
+    this.logger.debug(`Recommending skills based on: ${currentSkills.join(', ')}`);
+
+    const prompt = `You are a career development advisor. Based on these current skills, recommend complementary skills to learn next.
+
+Current Skills: ${currentSkills.join(', ')}
+${targetRole ? `Target Role: ${targetRole}` : ''}
+
+Recommend 5-10 high-value skills that would complement the current skill set.
+
+Return ONLY a valid JSON object:
+{
+  "recommendations": [
+    {
+      "skill": "skill name",
+      "reason": "why this skill complements current skills",
+      "relevance": 0.95,
+      "demandScore": 0.9,
+      "difficulty": "beginner|intermediate|advanced",
+      "estimatedLearningTime": "e.g., 2-3 months"
+    }
+  ],
+  "summary": "overall recommendation strategy in 2-3 sentences"
+}
+
+Return JSON only, no markdown formatting.`;
+
+    try {
+      const response = await this.callGemini(prompt);
+      const parsed = this.parseJSON(response);
+      return parsed;
+    } catch (error) {
+      this.logger.error(`Skill recommendations failed: ${error.message}`);
+      return {
+        recommendations: [],
+        summary: 'Recommendations failed. Please try again.',
+      };
+    }
+  }
+
+  /**
+   * Parse JSON response, handling markdown code blocks
+   */
+  private parseJSON(response: string): any {
+    try {
+      let cleaned = response.trim();
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.replace(/```json\s*/g, '').replace(/```\s*$/g, '');
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/```\s*/g, '');
+      }
+      return JSON.parse(cleaned);
+    } catch (error) {
+      this.logger.error(`Failed to parse JSON: ${error.message}`);
+      this.logger.debug(`Response was: ${response}`);
+      throw error;
+    }
   }
 }

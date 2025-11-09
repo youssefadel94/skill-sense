@@ -11,27 +11,44 @@ export class CvParserService {
     private readonly gcs: GcsService,
   ) {}
 
-  async parseCV(fileUrl: string): Promise<any> {
-    this.logger.log(`Parsing CV from: ${fileUrl}`);
+  /**
+   * Upload CV file to GCS and extract skills using Vertex AI
+   * Supports PDF, DOCX, and text files
+   */
+  async parseCVFromFile(file: any, userId: string): Promise<any> {
+    this.logger.log(`Parsing CV file: ${file.originalname} for user: ${userId}`);
     
-    // Download CV from GCS
-    const filename = this.extractFilename(fileUrl);
-    const fileBuffer = await this.gcs.downloadFile(filename);
+    // Upload to GCS with content type
+    const gcsPath = `cvs/${userId}/${Date.now()}-${file.originalname}`;
+    const gcsUri = await this.gcs.uploadFile(file.buffer, gcsPath, file.mimetype);
     
-    // Convert to text (placeholder)
-    const text = fileBuffer.toString('utf-8');
+    this.logger.log(`Uploaded CV to GCS: ${gcsUri}`);
     
-    // Extract skills using Vertex AI
-    const skills = await this.vertexAI.extractSkills(text);
+    // Extract skills using Vertex AI (directly from GCS URI)
+    const skills = await this.vertexAI.extractSkillsFromDocument(gcsUri);
     
     return {
       source: 'cv',
+      gcsUri,
+      fileName: file.originalname,
+      fileType: file.mimetype,
       skills,
-      rawText: text.substring(0, 500), // First 500 chars
     };
   }
 
-  private extractFilename(url: string): string {
-    return url.split('/').pop() || '';
+  /**
+   * Parse CV from existing GCS URL
+   */
+  async parseCVFromUrl(fileUrl: string): Promise<any> {
+    this.logger.log(`Parsing CV from URL: ${fileUrl}`);
+    
+    // Extract skills using Vertex AI
+    const skills = await this.vertexAI.extractSkillsFromDocument(fileUrl);
+    
+    return {
+      source: 'cv',
+      fileUrl,
+      skills,
+    };
   }
 }

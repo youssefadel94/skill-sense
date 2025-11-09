@@ -39,4 +39,9 @@ export class FirestoreService {
   async deleteDocument(collection: string, docId: string) {
     await this.db.collection(collection).doc(docId).delete();
   }
+
+  async listDocuments(collection: string, limit: number = 100) {
+    const snapshot = await this.db.collection(collection).limit(limit).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
 }

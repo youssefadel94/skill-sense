@@ -24,6 +24,18 @@ export class ExtractionService {
     return { jobId, status: 'queued' };
   }
 
+  async extractFromCVFile(userId: string, file: any) {
+    this.logger.log(`Starting CV file extraction for user: ${userId}, file: ${file.originalname}`);
+    
+    // Process file directly
+    const result = await this.cvParser.parseCVFromFile(file, userId);
+    
+    return {
+      status: 'completed',
+      result,
+    };
+  }
+
   async extractFromGitHub(userId: string, username: string) {
     this.logger.log(`Starting GitHub extraction for user: ${userId}`);
     const jobId = await this.jobQueue.createJob('github-extraction', {

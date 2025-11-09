@@ -95,7 +95,190 @@ This document outlines future features, optimizations, and improvements based on
 - `projects/nue-util/src/lib/services/db/scrapper.service.ts` - Web scraping patterns
 - `node projects/scrapper/` - Scraper implementations
 
-### Skill Recommendations
+### AI-Powered Skill Gap Analysis
+**Priority:** High  
+**Effort:** 2 weeks
+
+**Features:**
+- ► **Identify hidden skill gaps** - Compare user skills against industry benchmarks and target roles
+- Analyze skill proficiency vs. market requirements
+- Detect missing complementary skills
+- Identify outdated skill versions
+- Benchmark against top performers in similar roles
+
+**Tech Stack:**
+- Vertex AI for skill analysis
+- Weaviate for semantic skill matching
+- Industry skill taxonomy database
+
+**Implementation:**
+```typescript
+interface SkillGap {
+  skill: string;
+  currentLevel: 'none' | 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  requiredLevel: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  timeToAcquire: string; // "2-3 months"
+  resources: LearningResource[];
+}
+```
+
+### Personalized Learning Paths
+**Priority:** High  
+**Effort:** 2 weeks
+
+**Features:**
+- ► **Recommend personalized learning paths** - AI-generated roadmaps based on current skills and career goals
+- Multi-path skill progression recommendations
+- Adaptive learning sequences based on learning style
+- Integration with online course platforms (Coursera, Udemy, LinkedIn Learning)
+- Skill dependency mapping
+- Progress tracking with milestones
+
+**Tech Stack:**
+- Vertex AI Gemini for path generation
+- Graph database for skill dependencies
+- LMS API integrations
+
+**Implementation:**
+```typescript
+interface LearningPath {
+  id: string;
+  targetRole: string;
+  currentSkillGaps: SkillGap[];
+  phases: LearningPhase[];
+  estimatedDuration: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites: string[];
+}
+
+interface LearningPhase {
+  name: string;
+  skills: string[];
+  resources: LearningResource[];
+  estimatedWeeks: number;
+  order: number;
+}
+```
+
+### Intelligent Adaptive CV Generation
+**Priority:** High  
+**Effort:** 2 weeks
+
+**Features:**
+- ► **Generate intelligent, adaptive CVs** - AI-powered CV customization for specific job descriptions
+- Auto-tailor CV content to job requirements
+- ATS (Applicant Tracking System) optimization
+- Skill highlighting based on job match
+- Multiple CV templates for different industries
+- PDF/DOCX export with professional formatting
+- Real-time job description analysis
+
+**Tech Stack:**
+- Vertex AI for content optimization
+- PDF generation libraries
+- Template engine (Handlebars/EJS)
+
+**Implementation:**
+```typescript
+interface AdaptiveCV {
+  userId: string;
+  targetJobDescription: string;
+  highlightedSkills: string[];
+  relevanceScore: number;
+  optimizedSections: {
+    summary: string;
+    experience: ExperienceEntry[];
+    skills: SkillSection[];
+    projects: ProjectEntry[];
+  };
+  atsScore: number;
+  suggestions: string[];
+}
+```
+
+### Smart Role Matching
+**Priority:** High  
+**Effort:** 2 weeks
+
+**Features:**
+- ► **Match individuals with ideal roles and opportunities** - AI-driven job matching based on skills, experience, and preferences
+- Semantic job-skill matching
+- Cultural fit analysis
+- Salary range predictions
+- Remote/hybrid/onsite preference matching
+- Growth opportunity scoring
+- Company culture alignment
+
+**Tech Stack:**
+- Weaviate vector search for semantic matching
+- Vertex AI for compatibility analysis
+- Job board API integrations (LinkedIn, Indeed, Glassdoor)
+
+**Implementation:**
+```typescript
+interface RoleMatch {
+  jobId: string;
+  jobTitle: string;
+  company: string;
+  matchScore: number; // 0-100
+  skillAlignment: {
+    matching: string[];
+    missing: string[];
+    exceeding: string[];
+  };
+  salaryRange: { min: number; max: number; currency: string };
+  cultureFit: number;
+  growthPotential: number;
+  reasons: string[];
+}
+```
+
+### Team Formation & Optimization
+**Priority:** Medium  
+**Effort:** 3 weeks
+
+**Features:**
+- ► **Empower organizations to form balanced, high-performing teams** - AI-powered team composition analysis
+- Skill diversity analysis
+- Team gap identification
+- Complementary skill matching
+- Collaboration compatibility scoring
+- Role distribution optimization
+- Diversity & inclusion metrics
+- Team performance prediction
+
+**Tech Stack:**
+- Graph algorithms for team analysis
+- Vertex AI for team dynamics prediction
+- Organization chart integration
+
+**Implementation:**
+```typescript
+interface TeamComposition {
+  teamId: string;
+  members: TeamMember[];
+  skillCoverage: {
+    covered: string[];
+    gaps: string[];
+    redundant: string[];
+  };
+  balanceScore: number;
+  diversityScore: number;
+  collaborationScore: number;
+  recommendations: TeamRecommendation[];
+}
+
+interface TeamRecommendation {
+  type: 'add_member' | 'reassign' | 'upskill' | 'rebalance';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  description: string;
+  expectedImpact: number;
+  suggestedCandidates?: string[];
+}
+```
+
+### Skill Recommendations (Legacy)
 **Priority:** High  
 **Effort:** 1 week
 

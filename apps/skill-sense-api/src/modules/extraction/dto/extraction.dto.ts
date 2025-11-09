@@ -6,8 +6,8 @@ export class ExtractFromCvDto {
   userId: string;
 
   @IsString()
-  @IsNotEmpty()
-  fileUrl: string;
+  @IsOptional()
+  fileUrl?: string;
 }
 
 export class ExtractFromGitHubDto {
