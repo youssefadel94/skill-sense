@@ -144,7 +144,11 @@ interface CategoryTrend {
                       </span>
                     </td>
                     <td class="salary">
-                      {{ '$' + trend.salaryRange.min }}k - {{ '$' + trend.salaryRange.max }}k
+                      @if (trend.salaryRange && trend.salaryRange.min && trend.salaryRange.max) {
+                        {{ '$' + trend.salaryRange.min }}k - {{ '$' + trend.salaryRange.max }}k
+                      } @else {
+                        N/A
+                      }
                     </td>
                     <td class="openings">
                       {{ formatNumber(trend.jobOpenings) }}
@@ -590,18 +594,23 @@ export class TrendsComponent implements OnInit, AfterViewInit {
 
       this.apiService.getSkillTrends().subscribe({
         next: (data) => {
+          // Map API response to TrendData interface
           this.trends = (data.trending || []).map((item: any) => ({
             skill: item.skill,
-            count: item.count,
-            percentage: parseFloat(item.percentage) || 0,
-            change: item.change || 0
+            category: item.category || 'Other',
+            demandChange: item.change || 0,
+            currentDemand: parseFloat(item.percentage) || 0,
+            salaryRange: item.salaryRange || { min: 0, max: 0 },
+            growthRate: this.determineGrowthRate(item.change || 0),
+            jobOpenings: item.count || 0
           }));
 
+          // Map category trends
           this.categoryTrends = (data.topCategories || []).map((item: any) => ({
             category: item.category,
-            count: item.count,
-            percentage: parseFloat(item.percentage) || 0,
-            change: item.change || 0
+            skillCount: item.count,
+            avgDemand: parseFloat(item.percentage) || 0,
+            trending: (parseFloat(item.percentage) || 0) > 20
           }));
 
           this.createCharts();
@@ -620,6 +629,12 @@ export class TrendsComponent implements OnInit, AfterViewInit {
     }
   }
 
+  determineGrowthRate(change: number): 'rising' | 'stable' | 'declining' {
+    if (change > 10) return 'rising';
+    if (change < -10) return 'declining';
+    return 'stable';
+  }
+
   createCharts() {
     // Wait for next tick to ensure canvas elements are rendered
     setTimeout(() => {
@@ -630,6 +645,11 @@ export class TrendsComponent implements OnInit, AfterViewInit {
   }
 
   createTopSkillsChart() {
+    if (!this.topSkillsChartRef?.nativeElement) {
+      console.warn('Top skills chart element not ready');
+      return;
+    }
+
     const top10 = this.trends.slice(0, 10);
     const config: ChartConfiguration = {
       type: 'bar',
@@ -662,6 +682,11 @@ export class TrendsComponent implements OnInit, AfterViewInit {
   }
 
   createCategoryChart() {
+    if (!this.categoryChartRef?.nativeElement) {
+      console.warn('Category chart element not ready');
+      return;
+    }
+
     const categories = [...new Set(this.trends.map(t => t.category))];
     const categoryCounts = categories.map(cat =>
       this.trends.filter(t => t.category === cat).length
@@ -700,6 +725,11 @@ export class TrendsComponent implements OnInit, AfterViewInit {
   }
 
   createDemandChart() {
+    if (!this.demandChartRef?.nativeElement) {
+      console.warn('Demand chart element not ready');
+      return;
+    }
+
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
     const topSkills = this.trends.slice(0, 5);
 

@@ -665,221 +665,6 @@ interface ProfileOverview {
   `]
 })
 export class ProfileComponent implements OnInit {
-      background: white;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      margin-bottom: 30px;
-    }
-
-    .info-card h2 {
-      margin: 0 0 10px 0;
-      color: #333;
-    }
-
-    .email {
-      color: #666;
-      margin: 0 0 15px 0;
-    }
-
-    .meta {
-      color: #999;
-      font-size: 14px;
-    }
-
-    .meta span {
-      margin: 0 5px;
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .section-header h2 {
-      margin: 0;
-      color: #333;
-    }
-
-    .cvs-section {
-      margin-bottom: 30px;
-    }
-
-    .cvs-section .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .cvs-section h2 {
-      color: #333;
-      margin: 0;
-    }
-
-    .cvs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .cv-card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      border-left: 4px solid #667eea;
-      display: flex;
-      gap: 15px;
-      align-items: start;
-      transition: transform 0.2s, box-shadow 0.2s;
-      position: relative;
-    }
-
-    .cv-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-    }
-
-    .cv-icon {
-      font-size: 32px;
-      flex-shrink: 0;
-    }
-
-    .cv-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .cv-info h3 {
-      margin: 0 0 8px 0;
-      color: #333;
-      font-size: 16px;
-      font-weight: 600;
-      word-break: break-word;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .cv-date {
-      color: #666;
-      font-size: 13px;
-      margin: 0 0 8px 0;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .date-icon {
-      font-size: 12px;
-    }
-
-    .cv-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-top: 8px;
-    }
-
-    .cv-stats {
-      color: #667eea;
-      font-size: 14px;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .stat-icon {
-      font-size: 14px;
-    }
-
-    .cv-type {
-      background: #e0e7ff;
-      color: #667eea;
-      padding: 3px 10px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .cv-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .btn-icon {
-      background: #f3f4f6;
-      border: none;
-      border-radius: 8px;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 18px;
-    }
-
-    .btn-icon:hover {
-      background: #e5e7eb;
-      transform: scale(1.05);
-    }
-
-    .btn-icon:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-icon.btn-danger:hover {
-      background: #fee;
-      color: #dc2626;
-    }
-
-    .spinner-small {
-      width: 16px;
-      height: 16px;
-      border: 2px solid #ddd;
-      border-top-color: #667eea;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .filters select {
-      min-width: 200px;
-    }
-
-    .skills-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-    }
-
-    .skill-card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      border-left: 4px solid #667eea;
-    }
-
-  `]
-})
-export class ProfileComponent implements OnInit {
   private apiService = inject(ApiService);
   private authService = inject(AuthService);
 
@@ -887,18 +672,19 @@ export class ProfileComponent implements OnInit {
   error = '';
   categoryFilter = '';
 
-  profile: Profile = {
+  profile: ProfileOverview = {
     id: '',
     name: '',
     email: '',
     createdAt: new Date(),
     updatedAt: new Date(),
     skillCount: 0,
-    sourcesConnected: 0
+    sourcesConnected: 0,
+    cvs: []
   };
 
-  skills: Skill[] = [];
-  filteredSkills: Skill[] = [];
+  skills: SkillOverview[] = [];
+  filteredSkills: SkillOverview[] = [];
   categories: string[] = [];
 
   downloadingCv: string | null = null;
@@ -1091,7 +877,7 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  private generateMockSkills(): Skill[] {
+  private generateMockSkills(): SkillOverview[] {
     return [
       { id: '1', name: 'TypeScript', category: 'Programming', confidence: 0.95, verified: true, occurrences: 12, evidenceCount: 8 },
       { id: '2', name: 'Angular', category: 'Frontend', confidence: 0.92, verified: true, occurrences: 10, evidenceCount: 6 },
