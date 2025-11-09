@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
 import { ApiService } from '../services/api.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-register',

@@ -3,6 +3,8 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
+import { ApiService } from '../services/api.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -329,6 +331,7 @@ import { AuthService } from '../services/auth.service';
 })
 export class LoginComponent {
   private authService = inject(AuthService);
+  private apiService = inject(ApiService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -354,7 +357,32 @@ export class LoginComponent {
     this.errorMessage = '';
 
     try {
-      await this.authService.login(this.email, this.password);
+      // Login with Firebase
+      const user = await this.authService.login(this.email, this.password);
+
+      // Check if profile exists, create if missing
+      try {
+        await firstValueFrom(this.apiService.getProfile(user.uid));
+        console.log('Profile exists for user');
+      } catch (error: any) {
+        // Profile doesn't exist, create one
+        if (error.status === 404 || error.status === 0) {
+          console.log('Profile not found, creating new profile');
+          try {
+            await firstValueFrom(this.apiService.createProfile({
+              userId: user.uid,
+              name: user.displayName || user.email?.split('@')[0] || 'User',
+              email: user.email || this.email
+            }));
+            console.log('Profile created successfully');
+          } catch (createError) {
+            console.error('Failed to create profile:', createError);
+            // Don't block login if profile creation fails
+          }
+        } else {
+          console.error('Error checking profile:', error);
+        }
+      }
 
       // Get return URL from query parameters or default to dashboard
       const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
