@@ -5,6 +5,8 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { ProfileComponent } from './profile/profile.component';
 import { UploadComponent } from './upload/upload.component';
 import { SkillGapsComponent } from './gaps/skill-gaps.component';
+import { RecommendationsComponent } from './recommendations/recommendations.component';
+import { TrendsComponent } from './trends/trends.component';
 import { authGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
@@ -15,7 +17,6 @@ export const routes: Routes = [
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'upload', component: UploadComponent, canActivate: [authGuard] },
   { path: 'gaps', component: SkillGapsComponent, canActivate: [authGuard] },
-  // Additional routes to be added in next phase:
-  // { path: 'recommendations', component: RecommendationsComponent, canActivate: [authGuard] },
-  // { path: 'trends', component: TrendsComponent, canActivate: [authGuard] },
+  { path: 'recommendations', component: RecommendationsComponent, canActivate: [authGuard] },
+  { path: 'trends', component: TrendsComponent, canActivate: [authGuard] },
 ];
