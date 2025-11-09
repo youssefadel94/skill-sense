@@ -430,23 +430,34 @@ export class SkillGapsComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      const user = await this.authService.getCurrentUser();
+      const userId = this.authService.getUserId();
+      if (!userId) {
+        this.error = 'Please login to analyze skill gaps';
+        this.loading = false;
+        return;
+      }
 
-      // TODO: Replace with actual API call
-      // this.apiService.analyzeSkillGaps(user.uid, this.targetRole).subscribe({
-      //   next: (gaps) => { this.gaps = gaps; this.filterGaps(); },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.loading = false; }
-      // });
-
-      // Mock data for now
-      await this.delay(2000);
-      this.gaps = this.generateMockGaps();
-      this.filterGaps();
+      this.apiService.analyzeSkillGaps(userId, this.targetRole).subscribe({
+        next: (response) => {
+          this.gaps = (response.missingSkills || []).map((skillName: string, index: number) => ({
+            skill: skillName,
+            priority: response.priorities?.[index] || 'medium',
+            impact: response.impacts?.[index] || 'medium',
+            learningTime: response.learningTimes?.[index] || '2-4 weeks',
+            resources: response.resources?.[skillName] || []
+          }));
+          this.filterGaps();
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Skill gaps analysis failed:', err);
+          this.error = err.message || 'Failed to analyze skill gaps';
+          this.loading = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to analyze skill gaps';
-    } finally {
       this.loading = false;
     }
   }

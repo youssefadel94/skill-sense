@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
 
 interface UploadResult {
   jobId: string;
@@ -367,6 +368,7 @@ interface UploadResult {
 })
 export class UploadComponent {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
   private router = inject(Router);
 
   selectedFile: File | null = null;
@@ -438,24 +440,28 @@ export class UploadComponent {
       this.error = '';
       this.uploadStatus = 'Uploading file...';
 
-      // TODO: Replace with actual API call
-      // const formData = new FormData();
-      // formData.append('file', this.selectedFile);
-      // this.result = await this.apiService.uploadCV(formData);
+      const userId = this.authService.getUserId();
+      if (!userId || !this.selectedFile) {
+        throw new Error('User not authenticated or no file selected');
+      }
 
-      // Mock upload process
-      await this.delay(1500);
-      this.uploadStatus = 'Extracting skills...';
-      await this.delay(2000);
-      this.uploadStatus = 'Validating results...';
-      await this.delay(1000);
-
-      this.result = {
-        jobId: 'mock-job-id',
-        status: 'completed',
-        skillsFound: 23,
-        message: 'Skills extracted successfully'
-      };
+      this.apiService.extractFromCV(userId, this.selectedFile).subscribe({
+        next: (response) => {
+          this.uploadStatus = 'Skills extracted successfully!';
+          this.result = {
+            jobId: response.jobId || 'completed',
+            status: 'completed',
+            skillsFound: response.skills?.length || response.skillsFound || 0,
+            message: response.message || 'Skills extracted successfully'
+          };
+          this.uploading = false;
+        },
+        error: (err) => {
+          console.error('CV extraction failed:', err);
+          this.error = err.message || 'Failed to extract skills from CV';
+          this.uploading = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to upload file';

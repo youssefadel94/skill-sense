@@ -588,22 +588,34 @@ export class TrendsComponent implements OnInit, AfterViewInit {
       this.loading = true;
       this.error = '';
 
-      // TODO: Replace with actual API call
-      // this.apiService.getSkillTrends().subscribe({
-      //   next: (data) => { this.trends = data.trends; this.createCharts(); },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.loading = false; }
-      // });
+      this.apiService.getSkillTrends().subscribe({
+        next: (data) => {
+          this.trends = (data.trending || []).map((item: any) => ({
+            skill: item.skill,
+            count: item.count,
+            percentage: parseFloat(item.percentage) || 0,
+            change: item.change || 0
+          }));
 
-      // Mock data for now
-      await this.delay(1200);
-      this.trends = this.generateMockTrends();
-      this.categoryTrends = this.generateCategoryTrends();
-      this.createCharts();
+          this.categoryTrends = (data.topCategories || []).map((item: any) => ({
+            category: item.category,
+            count: item.count,
+            percentage: parseFloat(item.percentage) || 0,
+            change: item.change || 0
+          }));
+
+          this.createCharts();
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to load trends:', err);
+          this.error = err.message || 'Failed to load trends';
+          this.loading = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to load trends';
-    } finally {
       this.loading = false;
     }
   }

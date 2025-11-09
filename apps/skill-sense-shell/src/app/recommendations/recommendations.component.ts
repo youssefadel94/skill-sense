@@ -630,23 +630,36 @@ export class RecommendationsComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      const user = await this.authService.getCurrentUser();
+      const userId = this.authService.getUserId();
+      if (!userId) {
+        this.error = 'Please login to get recommendations';
+        this.loading = false;
+        return;
+      }
 
-      // TODO: Replace with actual API call
-      // this.apiService.getSkillRecommendations(user.uid).subscribe({
-      //   next: (recs) => { this.recommendations = recs; this.filterRecommendations(); },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.loading = false; }
-      // });
-
-      // Mock data for now
-      await this.delay(1500);
-      this.recommendations = this.generateMockRecommendations();
-      this.filterRecommendations();
+      this.apiService.getSkillRecommendations(userId).subscribe({
+        next: (response) => {
+          this.recommendations = (response.recommendations || []).map((rec: any) => ({
+            skill: rec.skill || rec.name,
+            category: rec.category || 'Other',
+            priority: rec.priority || 'medium',
+            reason: rec.reason || 'Recommended based on your profile',
+            marketDemand: rec.marketDemand || 'high',
+            learningTime: rec.learningTime || rec.estimatedTime || '4-8 weeks',
+            resources: rec.resources || []
+          }));
+          this.filterRecommendations();
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to load recommendations:', err);
+          this.error = err.message || 'Failed to load recommendations';
+          this.loading = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to load recommendations';
-    } finally {
       this.loading = false;
     }
   }

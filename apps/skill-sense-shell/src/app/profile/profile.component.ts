@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
 
 interface Profile {
   id: string;
@@ -341,6 +342,7 @@ interface Skill {
 })
 export class ProfileComponent implements OnInit {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
 
   loading = true;
   error = '';
@@ -369,30 +371,48 @@ export class ProfileComponent implements OnInit {
       this.loading = true;
       this.error = '';
 
-      // TODO: Replace with actual API calls
-      // const profile = await this.apiService.getProfile();
-      // const skills = await this.apiService.getSkills(profile.id);
+      const userId = this.authService.getUserId();
+      if (!userId) {
+        this.error = 'Please login to view your profile';
+        this.loading = false;
+        return;
+      }
 
-      // Mock data for now
-      await this.delay(800);
+      this.apiService.getProfile(userId).subscribe({
+        next: (profileData) => {
+          this.profile = {
+            id: profileData.id || userId,
+            name: profileData.name || 'User',
+            email: profileData.email || this.authService.getCurrentUser()?.email || '',
+            createdAt: profileData.createdAt ? new Date(profileData.createdAt) : new Date(),
+            updatedAt: profileData.updatedAt ? new Date(profileData.updatedAt) : new Date(),
+            skillCount: profileData.skills?.length || 0,
+            sourcesConnected: profileData.sourcesConnected || 0
+          };
 
-      this.profile = {
-        id: '123',
-        name: 'John Doe',
-        email: 'john@example.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        skillCount: 15,
-        sourcesConnected: 2
-      };
+          this.skills = (profileData.skills || []).map((skill: any) => ({
+            id: skill.id || Math.random().toString(),
+            name: skill.name,
+            category: skill.category || 'Other',
+            confidence: skill.confidence || 0,
+            verified: skill.verified || false,
+            occurrences: skill.occurrences || 1,
+            evidenceCount: skill.evidence?.length || 0
+          }));
 
-      this.skills = this.generateMockSkills();
-      this.filteredSkills = [...this.skills];
-      this.categories = [...new Set(this.skills.map(s => s.category))];
+          this.filteredSkills = [...this.skills];
+          this.categories = [...new Set(this.skills.map(s => s.category))];
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Failed to load profile:', err);
+          this.error = 'Failed to load profile. Please try again.';
+          this.loading = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to load profile';
-    } finally {
       this.loading = false;
     }
   }
