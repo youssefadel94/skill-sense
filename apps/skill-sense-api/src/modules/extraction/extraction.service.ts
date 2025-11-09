@@ -56,7 +56,9 @@ export class ExtractionService {
 
       // Merge skills with existing ones
       const existingSkills = profile.skills || [];
-      const newSkills = extractionResult.skills || [];
+      const newSkills = Array.isArray(extractionResult.skills) 
+        ? extractionResult.skills 
+        : (extractionResult.skills ? [extractionResult.skills] : []);
       
       // Create a map of existing skills by name (case-insensitive)
       const skillMap = new Map();

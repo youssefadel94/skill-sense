@@ -166,7 +166,7 @@ Select defaults, then update `package.json`:
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@google-cloud/firestore": "^7.1.0",
-    "@google-cloud/aiplatform": "^3.13.0",
+    "@google-cloud/vertexai": "^3.13.0",
     "@google-cloud/tasks": "^4.1.0",
     "@google-cloud/documentai": "^8.0.0",
     "@google-cloud/storage": "^7.7.0",
@@ -317,10 +317,10 @@ Create `apps/api-nest/src/ai/vertex-ai.service.ts`:
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { PredictionServiceClient } from '@google-cloud/aiplatform';
+import { PredictionServiceClient } from '@google-cloud/vertexai';
 import { DocumentProcessorServiceClient } from '@google-cloud/documentai';
 import { Storage } from '@google-cloud/storage';
-import { helpers } from '@google-cloud/aiplatform';
+import { helpers } from '@google-cloud/vertexai';
 
 @Injectable()
 export class VertexAiService {
@@ -992,7 +992,7 @@ Create `apps/api-nest/src/agent/agent-orchestrator.service.ts`:
 import { Injectable } from '@nestjs/common';
 import { VertexAiService } from '../ai/vertex-ai.service';
 import { ExtensionsService } from './extensions.service';
-import { helpers } from '@google-cloud/aiplatform';
+import { helpers } from '@google-cloud/vertexai';
 
 @Injectable()
 export class AgentOrchestratorService {

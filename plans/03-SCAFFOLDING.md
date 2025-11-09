@@ -79,7 +79,7 @@ cd apps/skill-sense-api
 
 # Install backend dependencies
 npm install --save \
-  @google-cloud/aiplatform \
+  @google-cloud/vertexai \
   @google-cloud/firestore \
   @google-cloud/storage \
   @nestjs/config \
@@ -597,7 +597,7 @@ npx @nestjs/cli new skill-sense-api --directory apps/skill-sense-api --package-m
 # Step 3: Install backend dependencies
 echo "📚 Step 3/12: Installing backend dependencies..."
 cd apps/skill-sense-api
-npm install --save @google-cloud/aiplatform @google-cloud/firestore @google-cloud/storage @nestjs/config class-validator class-transformer weaviate-ts-client @octokit/rest uuid > /dev/null 2>&1
+npm install --save @google-cloud/vertexai @google-cloud/firestore @google-cloud/storage @nestjs/config class-validator class-transformer weaviate-ts-client @octokit/rest uuid > /dev/null 2>&1
 npm install --save-dev @types/uuid > /dev/null 2>&1
 cd ../..
 

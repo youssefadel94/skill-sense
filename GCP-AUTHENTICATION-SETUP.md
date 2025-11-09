@@ -221,16 +221,7 @@ constructor() {
 
 ### vertex-ai.service.ts
 
-```typescript
-import { PredictionServiceClient } from '@google-cloud/aiplatform';
 
-constructor() {
-  this.client = new PredictionServiceClient({
-    apiEndpoint: `${process.env.GCP_LOCATION || 'us-central1'}-aiplatform.googleapis.com`,
-    keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-  });
-}
-```
 
 ---
 

@@ -222,7 +222,7 @@ Ingest → Normalize → Chunk → Embed (Vertex AI) → Index (Weaviate) → RA
 ```
 
 **Vertex AI Integration:**
-- Use `@google-cloud/aiplatform` SDK
+- Use `@google-cloud/vertexai` SDK
 - Embeddings: `text-embedding-gecko@latest` (768 dimensions)
 - LLM: `gemini-pro` or `text-bison` for skill extraction and reasoning
 - Agent coordination: use Vertex AI Agent Builder for orchestrating multi-source searches

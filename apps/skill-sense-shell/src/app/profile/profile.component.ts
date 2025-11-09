@@ -223,6 +223,61 @@ interface CV {
       color: #333;
     }
 
+    .cvs-section {
+      margin-bottom: 30px;
+    }
+
+    .cvs-section h2 {
+      color: #333;
+      margin: 0 0 20px 0;
+    }
+
+    .cvs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .cv-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #667eea;
+      display: flex;
+      gap: 15px;
+      align-items: start;
+    }
+
+    .cv-icon {
+      font-size: 32px;
+    }
+
+    .cv-info {
+      flex: 1;
+    }
+
+    .cv-info h3 {
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: 16px;
+      word-break: break-word;
+    }
+
+    .cv-date {
+      color: #999;
+      font-size: 13px;
+      margin: 0 0 5px 0;
+    }
+
+    .cv-stats {
+      color: #667eea;
+      font-size: 14px;
+      margin: 0;
+      font-weight: 500;
+    }
+
     .filters select {
       min-width: 200px;
     }

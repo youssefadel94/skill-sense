@@ -48,7 +48,7 @@ SkillSense is an AI-powered skill discovery platform that automatically extracts
 
 **Key Libraries**:
 - `@nestjs/common`, `@nestjs/core` - Core framework
-- `@google-cloud/aiplatform` - Vertex AI SDK
+- `@google-cloud/vertixAI` - Vertex AI SDK
 - `@google-cloud/storage` - GCS for file storage
 - `@google-cloud/firestore` - Database
 - `weaviate-ts-client` - Vector database client

@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PredictionServiceClient } from '@google-cloud/aiplatform';
-import { protos } from '@google-cloud/aiplatform';
+import { VertexAI, HarmCategory, HarmBlockThreshold } from '@google-cloud/vertexai';
 
 interface ExtractedSkill {
   name: string;
@@ -22,17 +21,20 @@ interface SkillExtractionResult {
 @Injectable()
 export class VertexAIService {
   private readonly logger = new Logger(VertexAIService.name);
-  private readonly client: PredictionServiceClient;
+  private readonly vertexAI: VertexAI;
   private readonly project: string;
   private readonly location: string;
   private readonly model: string = 'gemini-2.0-flash-lite-001';
 
   constructor() {
-    this.client = new PredictionServiceClient({
-      apiEndpoint: `${process.env.GCP_LOCATION || 'us-central1'}-aiplatform.googleapis.com`,
-    });
     this.project = process.env.GCP_PROJECT_ID || '';
     this.location = process.env.GCP_LOCATION || 'us-central1';
+    
+    this.vertexAI = new VertexAI({
+      project: this.project,
+      location: this.location,
+    });
+    
     this.logger.log(`Vertex AI service initialized for project: ${this.project}`);
   }
 
@@ -46,7 +48,7 @@ export class VertexAIService {
 
     try {
       const prompt = this.buildSkillExtractionPrompt(text);
-      const response = await this.callGemini(prompt);
+      const response = await this.generateContent(prompt);
       const skills = this.parseSkillsResponse(response);
 
       return {
@@ -59,14 +61,12 @@ export class VertexAIService {
       };
     } catch (error) {
       this.logger.error(`Vertex AI extraction failed: ${error.message}`, error.stack);
-      // Fallback to mock data on error
       return this.getMockSkills(text);
     }
   }
 
   /**
    * Extract skills from PDF/DOCX file stored in GCS
-   * Uses Gemini's native document processing
    */
   async extractSkillsFromDocument(gcsUri: string): Promise<SkillExtractionResult> {
     this.logger.debug(`Extracting skills from document: ${gcsUri}`);
@@ -88,7 +88,7 @@ For each skill, provide:
 
 Return ONLY a valid JSON array of skill objects.`;
 
-      const response = await this.callGeminiWithDocument(prompt, gcsUri);
+      const response = await this.generateContentWithFile(prompt, gcsUri);
       const skills = this.parseSkillsResponse(response);
 
       return {
@@ -96,7 +96,7 @@ Return ONLY a valid JSON array of skill objects.`;
         metadata: {
           model: this.model,
           timestamp: new Date().toISOString(),
-          textLength: 0, // Document length unknown
+          textLength: 0,
         },
       };
     } catch (error) {
@@ -105,118 +105,132 @@ Return ONLY a valid JSON array of skill objects.`;
     }
   }
 
-  async generateEmbedding(text: string): Promise<number[]> {
-    this.logger.debug(`Generating embedding for text (${text.length} chars)`);
-    
-    if (!this.project) {
-      this.logger.warn('GCP_PROJECT_ID not set, using mock embedding');
-      return this.getMockEmbedding();
-    }
-
+  /**
+   * Generate content using Gemini with text prompt only
+   */
+  private async generateContent(prompt: string): Promise<string> {
     try {
-      const endpoint = `projects/${this.project}/locations/${this.location}/publishers/google/models/textembedding-gecko@003`;
-      
-      const instance = {
-        content: text.substring(0, 3072), // Max 3072 tokens for text-embedding-gecko
-      };
+      const generativeModel = this.vertexAI.preview.getGenerativeModel({
+        model: this.model,
+        generationConfig: {
+          maxOutputTokens: 8192,
+          temperature: 0.2,
+          topP: 0.8,
+        },
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+        ],
+      });
 
       const request = {
-        endpoint,
-        instances: [instance],
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
       };
 
-      const [response] = await this.client.predict(request as any);
-      const predictions = response.predictions as any[];
+      const streamingResp = await generativeModel.generateContentStream(request);
       
-      if (predictions && predictions[0] && predictions[0].embeddings) {
-        return predictions[0].embeddings.values;
+      let completeText = '';
+      for await (const item of streamingResp.stream) {
+        if (item?.candidates && item.candidates.length > 0) {
+          const parts = item.candidates[0]?.content?.parts;
+          if (parts && parts.length > 0 && parts[0]?.text) {
+            completeText += parts[0].text;
+          }
+        }
       }
 
-      return this.getMockEmbedding();
-    } catch (error) {
-      this.logger.error(`Embedding generation failed: ${error.message}`);
-      return this.getMockEmbedding();
-    }
-  }
-
-  private async callGemini(prompt: string): Promise<string> {
-    const endpoint = `projects/${this.project}/locations/${this.location}/publishers/google/models/${this.model}`;
-    
-    const instanceValue = {
-      content: prompt,
-    };
-
-    const parameters = {
-      temperature: 0.2,
-      maxOutputTokens: 2048,
-      topP: 0.8,
-      topK: 40,
-    };
-
-    const request = {
-      endpoint,
-      instances: [{ content: prompt }],
-      parameters,
-    };
-
-    try {
-      const [response] = await this.client.predict(request as any);
-      const predictions = response.predictions as any[];
-      
-      if (predictions && predictions.length > 0) {
-        return predictions[0].content || predictions[0].text || JSON.stringify(predictions[0]);
-      }
-
-      throw new Error('No predictions returned from Gemini');
-    } catch (error) {
-      this.logger.error(`Gemini API call failed: ${error.message}`);
+      return completeText;
+    } catch (error: any) {
+      this.logger.error(`Gemini content generation failed: ${error.message}`);
       throw error;
     }
   }
 
   /**
-   * Call Gemini with document from GCS
-   * Supports PDF, DOCX, and other document formats
+   * Generate content with file from GCS
    */
-  private async callGeminiWithDocument(prompt: string, gcsUri: string): Promise<string> {
-    const endpoint = `projects/${this.project}/locations/${this.location}/publishers/google/models/${this.model}`;
-    
-    // Format GCS URI properly (must start with gs://)
-    const formattedUri = gcsUri.startsWith('gs://') 
-      ? gcsUri 
-      : `gs://${gcsUri.replace(/^https?:\/\/storage\.googleapis\.com\//, '')}`;
-
-    this.logger.debug(`Using GCS URI: ${formattedUri}`);
-
-    const parameters = {
-      temperature: 0.2,
-      maxOutputTokens: 2048,
-      topP: 0.8,
-      topK: 40,
-    };
-
-    const request = {
-      endpoint,
-      instances: [{
-        content: prompt,
-        document: {
-          gcsUri: formattedUri,
-        },
-      }],
-      parameters,
-    };
-
+  private async generateContentWithFile(prompt: string, gcsUri: string): Promise<string> {
     try {
-      const [response] = await this.client.predict(request as any);
-      const predictions = response.predictions as any[];
+      // Format GCS URI properly
+      const formattedUri = gcsUri.startsWith('gs://') 
+        ? gcsUri 
+        : `gs://${gcsUri.replace(/^https?:\/\/storage\.googleapis\.com\//, '')}`;
+
+      this.logger.debug(`Using GCS URI: ${formattedUri}`);
+
+      const generativeModel = this.vertexAI.preview.getGenerativeModel({
+        model: this.model,
+        generationConfig: {
+          maxOutputTokens: 8192,
+          temperature: 0.2,
+          topP: 0.8,
+        },
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_NONE,
+          },
+        ],
+      });
+
+      const request = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: prompt },
+              {
+                fileData: {
+                  fileUri: formattedUri,
+                  mimeType: 'application/pdf',
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      const streamingResp = await generativeModel.generateContentStream(request);
       
-      if (predictions && predictions.length > 0) {
-        return predictions[0].content || predictions[0].text || JSON.stringify(predictions[0]);
+      let completeText = '';
+      for await (const item of streamingResp.stream) {
+        if (item?.candidates && item.candidates.length > 0) {
+          const parts = item.candidates[0]?.content?.parts;
+          if (parts && parts.length > 0 && parts[0]?.text) {
+            completeText += parts[0].text;
+          }
+        }
       }
 
-      throw new Error('No predictions returned from Gemini');
-    } catch (error) {
-      this.logger.error(`Gemini document API call failed: ${error.message}`);
+      return completeText;
+    } catch (error: any) {
+      this.logger.error(`Gemini document generation failed: ${error.message}`);
       throw error;
     }
   }
@@ -325,11 +339,6 @@ JSON response:`;
     };
   }
 
-  private getMockEmbedding(): number[] {
-    // Return a mock 768-dimensional embedding (typical for text-embedding-gecko)
-    return Array.from({ length: 768 }, () => Math.random() * 2 - 1);
-  }
-
   /**
    * Analyze skill gaps for a target role
    */
@@ -370,7 +379,7 @@ Return ONLY a valid JSON object with this structure:
 Return JSON only, no markdown formatting.`;
 
     try {
-      const response = await this.callGemini(prompt);
+      const response = await this.generateContent(prompt);
       const parsed = this.parseJSON(response);
       return parsed;
     } catch (error) {
@@ -416,7 +425,7 @@ Return ONLY a valid JSON object:
 Return JSON only, no markdown formatting.`;
 
     try {
-      const response = await this.callGemini(prompt);
+      const response = await this.generateContent(prompt);
       const parsed = this.parseJSON(response);
       return parsed;
     } catch (error) {
