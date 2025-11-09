@@ -217,6 +217,16 @@ export class ProfileController {
     return this.profileService.deleteCV(userId, cvIdentifier);
   }
 
+  @Get(':id/cvs/:cvIndex/download')
+  @ApiOperation({ summary: 'Get signed URL to download a CV' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'cvIndex', description: 'CV array index or GCS URI (encoded)' })
+  @ApiResponse({ status: 200, description: 'Returns signed download URL' })
+  @ApiResponse({ status: 404, description: 'CV not found' })
+  async getCVDownloadUrl(@Param('id') userId: string, @Param('cvIndex') cvIdentifier: string) {
+    return this.profileService.getCVDownloadUrl(userId, cvIdentifier);
+  }
+
   @Delete(':id/learning-paths/:pathId')
   @ApiOperation({ summary: 'Delete learning path' })
   @ApiParam({ name: 'id', description: 'User ID' })

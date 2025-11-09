@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { FirestoreService } from '../../shared/services/firestore.service';
 import { VertexAIService } from '../../shared/services/vertex-ai.service';
+import { GcsService } from '../../shared/services/gcs.service';
 import { GenerateCVDto, MatchRolesDto, GenerateLearningPathDto } from './dto/advanced.dto';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class ProfileService {
   constructor(
     private readonly firestore: FirestoreService,
     private readonly vertexAI: VertexAIService,
+    private readonly gcs: GcsService,
   ) {}
 
   async createProfile(data: any) {
@@ -510,6 +512,48 @@ export class ProfileService {
       success: true, 
       deletedCv: deletedCv.fileName,
       remainingCvs: profile.cvs.length 
+    };
+  }
+
+  async getCVDownloadUrl(userId: string, cvIdentifier: string) {
+    this.logger.log(`Getting download URL for CV - User: ${userId}, CV: ${cvIdentifier}`);
+
+    const profile: any = await this.getProfile(userId);
+    if (!profile) {
+      throw new Error('Profile not found');
+    }
+
+    if (!profile.cvs || profile.cvs.length === 0) {
+      throw new Error('No CVs found in profile');
+    }
+
+    // Find CV by gcsUri (decode URI component in case it's encoded)
+    const decodedIdentifier = decodeURIComponent(cvIdentifier);
+    const cv = profile.cvs.find((c: any) => 
+      c.gcsUri === decodedIdentifier || c.gcsUri === cvIdentifier
+    );
+
+    if (!cv) {
+      this.logger.error(`CV not found: ${cvIdentifier}`);
+      throw new Error('CV not found');
+    }
+
+    // Extract filename from GCS URI (gs://bucket/path/to/file.pdf)
+    const gcsUri = cv.gcsUri;
+    const filename = gcsUri.replace(/^gs:\/\/[^\/]+\//, '');
+
+    this.logger.debug(`Generating signed URL for file: ${filename}`);
+
+    // Generate signed URL (valid for 1 hour)
+    const signedUrl = await this.gcs.getSignedUrl(filename, 3600);
+
+    this.logger.log(`✓ Signed URL generated for: ${cv.fileName}`);
+
+    return {
+      success: true,
+      fileName: cv.fileName,
+      downloadUrl: signedUrl,
+      expiresIn: 3600,
     };
   }
 

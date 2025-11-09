@@ -625,9 +625,6 @@ interface ProfileOverview {
         grid-template-columns: 1fr;
       }
     }
-  `]
-})
-    }
 
     .storage-uri {
       font-family: 'Courier New', monospace;
@@ -665,8 +662,9 @@ interface ProfileOverview {
       background: #fca5a5;
       cursor: not-allowed;
     }
-
-    .info-card {
+  `]
+})
+export class ProfileComponent implements OnInit {
       background: white;
       padding: 30px;
       border-radius: 12px;
@@ -879,134 +877,6 @@ interface ProfileOverview {
       border-left: 4px solid #667eea;
     }
 
-    .skill-card.verified {
-      border-left-color: #10b981;
-    }
-
-    .skill-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: start;
-      margin-bottom: 10px;
-    }
-
-    .skill-card h3 {
-      margin: 0;
-      color: #333;
-      font-size: 18px;
-    }
-
-    .skill-category {
-      color: #666;
-      font-size: 14px;
-      margin: 0 0 15px 0;
-    }
-
-    .skill-stats {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .stat {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 14px;
-    }
-
-    .stat .label {
-      color: #666;
-    }
-
-    .stat .value {
-      color: #333;
-      font-weight: 500;
-    }
-
-    .confidence-bar {
-      flex: 1;
-      height: 8px;
-      background: #e0e0e0;
-      border-radius: 4px;
-      margin: 0 10px;
-      overflow: hidden;
-    }
-
-    .confidence-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-      transition: width 0.3s;
-    }
-
-    .badge {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .badge-verified {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      background: white;
-      border-radius: 12px;
-    }
-
-    .empty-state p {
-      color: #666;
-      margin-bottom: 20px;
-    }
-
-    .alert-error {
-      background: #fee;
-      color: #c33;
-      padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      text-decoration: none;
-      display: inline-block;
-      transition: background 0.2s;
-    }
-
-    .btn-primary {
-      background: #667eea;
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #5568d3;
-    }
-
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-    }
-
-    .btn-secondary:hover {
-      background: #5a6268;
-    }
-
-    .form-control {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 14px;
-    }
   `]
 })
 export class ProfileComponent implements OnInit {
@@ -1146,19 +1016,23 @@ export class ProfileComponent implements OnInit {
     try {
       this.downloadingCv = cv.gcsUri;
 
-      // Get signed URL from backend
       const userId = this.authService.getUserId();
       if (!userId) {
         throw new Error('User not authenticated');
       }
 
-      // For now, just open in new tab (you can implement actual download later)
-      window.open(cv.gcsUri, '_blank');
+      console.log('[PROFILE] Requesting signed URL for:', cv.gcsUri);
+
+      // Get signed download URL from backend
+      const response = await firstValueFrom(this.apiService.getCVDownloadUrl(userId, cv.gcsUri));
+
+      console.log('[PROFILE] ✓ Opening signed URL in new tab');
+      window.open(response.downloadUrl, '_blank');
 
       console.log('[PROFILE] ✓ CV download initiated');
     } catch (error: any) {
       console.error('[PROFILE] ✗ Failed to download CV:', error);
-      alert('Failed to download CV: ' + error.message);
+      alert('Failed to download CV: ' + (error.error?.message || error.message));
     } finally {
       this.downloadingCv = null;
     }

@@ -56,6 +56,19 @@ export class ApiService {
     );
   }
 
+  getCVSignedUrl(userId: string, cvGcsUri: string): Observable<{ url: string }> {
+    console.log('[API SERVICE] Getting signed URL for CV:', cvGcsUri);
+    const encodedUri = encodeURIComponent(cvGcsUri);
+    return this.getAuthHeaders().pipe(
+      switchMap((headers) => this.http.get<{ url: string }>(`${this.apiUrl}/profiles/${userId}/cvs/${encodedUri}/signed-url`, { headers })),
+      tap((response: any) => console.log('[API SERVICE] ✓ Signed URL received:', response.url)),
+      catchError((error: any) => {
+        console.error('[API SERVICE] ✗ Failed to get signed URL:', error);
+        throw error;
+      })
+    );
+  }
+
   deleteCV(userId: string, cvGcsUri: string): Observable<any> {
     const encodedUri = encodeURIComponent(cvGcsUri);
     return this.getAuthHeaders().pipe(
@@ -285,6 +298,13 @@ export class ApiService {
   getRecentCVs(userId: string, limit: number = 10): Observable<any> {
     return this.getAuthHeaders().pipe(
       switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/cv/recent?limit=${limit}`, { headers }))
+    );
+  }
+
+  getCVDownloadUrl(userId: string, cvGcsUri: string): Observable<any> {
+    const encodedUri = encodeURIComponent(cvGcsUri);
+    return this.getAuthHeaders().pipe(
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/cvs/${encodedUri}/download`, { headers }))
     );
   }
 
