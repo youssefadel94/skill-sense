@@ -8,19 +8,29 @@
     "projects/*"
   ],
   "scripts": {
-    "install:all": "npm install && cd apps/skill-sense-api && npm install",
+    "setup": "npm install && cd apps/skill-sense-api && npm install && cd ../skill-sense-shell && npm install",
+    "install:all": "npm run setup",
+    "build": "npm run build:api && npm run build:web",
     "build:api": "cd apps/skill-sense-api && npm run build",
-    "build:web": "ng build skill-sense-shell --configuration production",
+    "build:web": "cd apps/skill-sense-shell && npm run build",
+    "start": "npm run start:api",
     "start:api": "cd apps/skill-sense-api && npm run start:dev",
-    "start:web": "ng serve skill-sense-shell --open",
+    "start:web": "cd apps/skill-sense-shell && npm start",
+    "start:all": "concurrently \"npm run start:api\" \"npm run start:web\"",
+    "test": "npm run test:api && npm run test:web",
     "test:api": "cd apps/skill-sense-api && npm run test",
-    "test:web": "ng test",
-    "deploy:api": "gcloud run deploy skill-sense-api --source apps/skill-sense-api --region us-central1 --allow-unauthenticated",
-    "deploy:web": "ng build skill-sense-shell --configuration production && firebase deploy --only hosting"
+    "test:web": "cd apps/skill-sense-shell && npm test",
+    "lint": "npm run lint:api && npm run lint:web",
+    "lint:api": "cd apps/skill-sense-api && npm run lint",
+    "lint:web": "cd apps/skill-sense-shell && npm run lint || echo 'Lint not configured'",
+    "deploy": "npm run deploy:api && npm run deploy:web",
+    "deploy:api": "cd apps/skill-sense-api && gcloud run deploy skill-sense-api --source . --region us-central1 --allow-unauthenticated",
+    "deploy:web": "cd apps/skill-sense-shell && npm run build && firebase deploy --only hosting"
   },
   "devDependencies": {
     "@angular/cli": "^20.3.0",
     "@nestjs/cli": "^11.0.1",
+    "concurrently": "^9.1.0",
     "typescript": "^5.0.0"
   },
   "keywords": [
