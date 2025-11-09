@@ -1,7 +1,7 @@
 # SkillSense: AI-Powered Career Intelligence Platform
 ## Hack Nation 2025 - Technical Report
 
-**Team Name:** SkillSense Team  
+**Team Name:** SkillSense SOLO Team  
 **Project Name:** SkillSense  
 **Submission Date:** November 9, 2025  
 **Technologies:** Google Vertex AI (Gemini 2.0), Angular 17, NestJS, Firebase, Weaviate

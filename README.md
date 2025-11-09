@@ -7,6 +7,26 @@ Automatically extract, validate, and organize professional skills from multiple 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Angular](https://img.shields.io/badge/Angular-20+-red)](https://angular.dev)
 [![NestJS](https://img.shields.io/badge/NestJS-11+-E0234E)](https://nestjs.com)
+[![Hack Nation 2025](https://img.shields.io/badge/Hack%20Nation-2025-blue)](https://hack-nation.ai)
+
+---
+
+## 🏆 Hack Nation 2025 Submission
+
+**SkillSense** is built for **Hack Nation 2025**, leveraging Google Vertex AI (Gemini 2.0 Flash) to revolutionize career development through AI-powered skill intelligence.
+
+### Submission Materials
+- **📄 Project Summary:** [SUBMISSION/PROJECT_SUMMARY.md](SUBMISSION/PROJECT_SUMMARY.md)
+- **📊 Technical Report:** [SUBMISSION/TECHNICAL_REPORT.md](SUBMISSION/TECHNICAL_REPORT.md)
+- **🎬 Demo Video:** _(Coming soon - 60 sec demo)_
+- **🛠️ Tech Video:** _(Coming soon - 60 sec walkthrough)_
+- **✅ Submission Checklist:** [SUBMISSION/SUBMISSION_CHECKLIST.md](SUBMISSION/SUBMISSION_CHECKLIST.md)
+
+### What Makes SkillSense Special
+✨ **AI-First Approach** - Uses Gemini 2.0 Flash for intelligent skill extraction and career analysis  
+🔍 **Vector Search** - Semantic skill matching with Weaviate for intelligent recommendations  
+📊 **Data-Driven Insights** - Real market trends, gap analysis, and personalized learning paths  
+🚀 **Production Ready** - Full-stack TypeScript, scalable architecture, deployed on Google Cloud
 
 ---
 

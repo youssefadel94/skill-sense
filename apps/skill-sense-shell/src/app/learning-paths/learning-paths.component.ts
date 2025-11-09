@@ -13,23 +13,25 @@ interface PathStep {
   description: string;
   duration: string;
   resources: Array<{
-    name: string;
-    type: 'course' | 'video' | 'article' | 'practice';
+    title: string;
     url: string;
-    provider: string;
-    cost: 'free' | 'paid';
+    type: 'docs' | 'video' | 'article' | 'practice' | 'tutorial' | 'exercise' | 'course';
+    provider?: string;
+    cost?: 'free' | 'paid';
   }>;
   completed: boolean;
 }
 
 interface CustomPath {
   id: string;
-  name: string;
-  targetRole: string;
+  userId: string;
+  title: string;
+  targetGoal: string;
+  learningStyle: string;
+  timeCommitment: number;
+  progress: number;
   steps: PathStep[];
-  totalDuration: string;
-  completionRate: number;
-  createdAt: Date;
+  createdAt: string | Date;
 }
 
 @Component({
@@ -121,17 +123,17 @@ interface CustomPath {
               @for (path of activePaths; track path.id) {
                 <div class="path-card" (click)="selectPath(path)">
                   <div class="path-header">
-                    <h4>{{ path.name }}</h4>
-                    <span class="target-role">🎯 {{ path.targetRole }}</span>
+                    <h4>{{ getPathName(path) }}</h4>
+                    <span class="target-role">🎯 {{ getPathTargetRole(path) }}</span>
                   </div>
 
                   <div class="path-progress">
                     <div class="progress-info">
                       <span>Progress</span>
-                      <span class="progress-value">{{ path.completionRate }}%</span>
+                      <span class="progress-value">{{ getPathCompletionRate(path) }}%</span>
                     </div>
                     <div class="progress-bar-large">
-                      <div class="progress-fill" [style.width.%]="path.completionRate"></div>
+                      <div class="progress-fill" [style.width.%]="getPathCompletionRate(path)"></div>
                     </div>
                   </div>
 
@@ -142,7 +144,7 @@ interface CustomPath {
                     </div>
                     <div class="stat">
                       <span class="stat-icon">⏱️</span>
-                      <span class="stat-text">{{ path.totalDuration }}</span>
+                      <span class="stat-text">{{ getPathTotalDuration(path) }}</span>
                     </div>
                     <div class="stat">
                       <span class="stat-icon">✓</span>
@@ -167,8 +169,8 @@ interface CustomPath {
             <div class="modal-content large" (click)="$event.stopPropagation()">
               <div class="modal-header">
                 <div>
-                  <h3>{{ selectedPath.name }}</h3>
-                  <p class="target-role-subtitle">🎯 Target: {{ selectedPath.targetRole }}</p>
+                  <h3>{{ getPathName(selectedPath) }}</h3>
+                  <p class="target-role-subtitle">🎯 Target: {{ getPathTargetRole(selectedPath) }}</p>
                 </div>
                 <button class="btn-close" (click)="closePath()">×</button>
               </div>
@@ -188,7 +190,7 @@ interface CustomPath {
                 <!-- Progress Overview -->
                 <div class="progress-overview">
                   <div class="progress-stat">
-                    <div class="stat-value">{{ selectedPath.completionRate }}%</div>
+                    <div class="stat-value">{{ getPathCompletionRate(selectedPath) }}%</div>
                     <div class="stat-label">Complete</div>
                   </div>
                   <div class="progress-stat">
@@ -196,7 +198,7 @@ interface CustomPath {
                     <div class="stat-label">Steps Done</div>
                   </div>
                   <div class="progress-stat">
-                    <div class="stat-value">{{ selectedPath.totalDuration }}</div>
+                    <div class="stat-value">{{ getPathTotalDuration(selectedPath) }}</div>
                     <div class="stat-label">Total Time</div>
                   </div>
                   <div class="progress-stat">
@@ -247,13 +249,13 @@ interface CustomPath {
                             <div class="resource-item">
                               <div class="resource-icon">{{ getResourceIcon(resource.type) }}</div>
                               <div class="resource-details">
-                                <div class="resource-name">{{ resource.name }}</div>
-                                <div class="resource-provider">{{ resource.provider }}</div>
+                                <div class="resource-name">{{ resource.title }}</div>
+                                <div class="resource-provider">{{ resource.provider || 'External Resource' }}</div>
                               </div>
                               <div class="resource-meta">
                                 @if (resource.cost === 'free') {
                                   <span class="badge-free">FREE</span>
-                                } @else {
+                                } @else if (resource.cost === 'paid') {
                                   <span class="badge-paid">PAID</span>
                                 }
                               </div>
@@ -872,6 +874,34 @@ export class LearningPathsComponent implements OnInit {
   activePaths: CustomPath[] = [];
   selectedPath: CustomPath | null = null;
 
+  // Computed getters for backward compatibility
+  getPathName(path: CustomPath): string {
+    return path.title || 'Unnamed Path';
+  }
+
+  getPathTargetRole(path: CustomPath): string {
+    return path.targetGoal || 'General Development';
+  }
+
+  getPathCompletionRate(path: CustomPath): number {
+    if (!path.steps || path.steps.length === 0) return 0;
+    const completed = path.steps.filter(s => s.completed).length;
+    return Math.round((completed / path.steps.length) * 100);
+  }
+
+  getPathTotalDuration(path: CustomPath): string {
+    if (!path.steps || path.steps.length === 0) return '0 hours';
+    const totalHours = path.steps.reduce((sum, step) => {
+      const match = step.duration.match(/(\d+)/);
+      return sum + (match ? parseInt(match[1]) : 0);
+    }, 0);
+
+    if (totalHours < 24) return `${totalHours} hours`;
+    const days = Math.ceil(totalHours / 8);
+    if (days < 7) return `${days} days`;
+    return `${Math.ceil(days / 7)} weeks`;
+  }
+
   ngOnInit() {
     this.loadActivePaths();
   }
@@ -888,26 +918,8 @@ export class LearningPathsComponent implements OnInit {
 
       this.apiService.getLearningPaths(userId).subscribe({
         next: (response) => {
-          this.activePaths = (response.paths || []).map((path: any) => ({
-            id: path.id,
-            title: path.title || path.targetRole,
-            targetRole: path.targetRole || path.title,
-            estimatedDuration: path.estimatedDuration || path.duration || '3 months',
-            difficulty: path.difficulty || 'Intermediate',
-            progress: path.progress || 0,
-            currentPhase: path.currentPhase || 'Foundation',
-            steps: (path.steps || []).map((step: any) => ({
-              id: step.id,
-              title: step.title,
-              description: step.description,
-              type: step.type || 'course',
-              duration: step.duration || '2 weeks',
-              resources: step.resources || [],
-              skills: step.skills || [],
-              completed: step.completed || false
-            })),
-            createdAt: path.createdAt || new Date().toISOString()
-          }));
+          // Map the API response to the CustomPath interface
+          this.activePaths = (response.paths || []).map((path: any) => this.mapApiPathToCustomPath(path));
           this.loading = false;
         },
         error: (err) => {
@@ -944,7 +956,8 @@ export class LearningPathsComponent implements OnInit {
 
     this.apiService.generateLearningPath(userId, config).subscribe({
       next: (path) => {
-        this.activePaths.unshift(path);
+        const mappedPath = this.mapApiPathToCustomPath(path);
+        this.activePaths.unshift(mappedPath);
         this.targetGoal = '';
         this.generating = false;
       },
@@ -954,6 +967,33 @@ export class LearningPathsComponent implements OnInit {
         this.generating = false;
       }
     });
+  }
+
+  private mapApiPathToCustomPath(apiPath: any): CustomPath {
+    return {
+      id: apiPath.id,
+      userId: apiPath.userId,
+      title: apiPath.title || apiPath.targetGoal || 'Unnamed Path',
+      targetGoal: apiPath.targetGoal || apiPath.title || 'General Development',
+      learningStyle: apiPath.learningStyle || 'balanced',
+      timeCommitment: apiPath.timeCommitment || 10,
+      progress: apiPath.progress || 0,
+      steps: (apiPath.steps || []).map((step: any) => ({
+        id: step.id,
+        title: step.title,
+        description: step.description,
+        duration: step.duration || '2 hours',
+        resources: (step.resources || []).map((resource: any) => ({
+          title: resource.title || resource.name || 'Resource',
+          url: resource.url || '#',
+          type: resource.type || 'article',
+          provider: resource.provider,
+          cost: resource.cost
+        })),
+        completed: step.completed || false
+      })),
+      createdAt: apiPath.createdAt || new Date().toISOString()
+    };
   }
 
   selectPath(path: CustomPath) {
@@ -1031,25 +1071,30 @@ export class LearningPathsComponent implements OnInit {
       course: '📚',
       video: '🎥',
       article: '📄',
-      practice: '💻'
+      practice: '💻',
+      docs: '📖',
+      tutorial: '🎓',
+      exercise: '✏️'
     };
     return icons[type] || '📎';
   }
 
   private updatePathCompletion(path: CustomPath) {
-    const completed = this.getCompletedSteps(path);
-    path.completionRate = Math.round((completed / path.steps.length) * 100);
+    // Progress is already tracked via getPathCompletionRate()
+    // No need to mutate the path object
   }
 
   private generateMockPaths(): CustomPath[] {
     return [
       {
         id: '1',
-        name: 'Master Kubernetes',
-        targetRole: 'DevOps Engineer',
-        totalDuration: '6 weeks',
-        completionRate: 35,
-        createdAt: new Date(),
+        userId: 'mock-user',
+        title: 'Master Kubernetes',
+        targetGoal: 'DevOps Engineer',
+        learningStyle: 'balanced',
+        timeCommitment: 10,
+        progress: 35,
+        createdAt: new Date().toISOString(),
         steps: [
           {
             id: 's1',
@@ -1058,8 +1103,8 @@ export class LearningPathsComponent implements OnInit {
             duration: '8 hours',
             completed: true,
             resources: [
-              { name: 'Docker for Beginners', type: 'course', url: 'https://example.com', provider: 'Udemy', cost: 'paid' },
-              { name: 'Container Concepts', type: 'article', url: 'https://example.com', provider: 'Medium', cost: 'free' }
+              { title: 'Docker for Beginners', type: 'course', url: 'https://example.com', provider: 'Udemy', cost: 'paid' },
+              { title: 'Container Concepts', type: 'article', url: 'https://example.com', provider: 'Medium', cost: 'free' }
             ]
           },
           {
@@ -1069,7 +1114,7 @@ export class LearningPathsComponent implements OnInit {
             duration: '10 hours',
             completed: true,
             resources: [
-              { name: 'Kubernetes Architecture Deep Dive', type: 'video', url: 'https://example.com', provider: 'YouTube', cost: 'free' }
+              { title: 'Kubernetes Architecture Deep Dive', type: 'video', url: 'https://example.com', provider: 'YouTube', cost: 'free' }
             ]
           },
           {
@@ -1079,7 +1124,7 @@ export class LearningPathsComponent implements OnInit {
             duration: '6 hours',
             completed: false,
             resources: [
-              { name: 'Minikube Tutorial', type: 'practice', url: 'https://example.com', provider: 'Kubernetes.io', cost: 'free' }
+              { title: 'Minikube Tutorial', type: 'practice', url: 'https://example.com', provider: 'Kubernetes.io', cost: 'free' }
             ]
           }
         ]
@@ -1090,11 +1135,13 @@ export class LearningPathsComponent implements OnInit {
   private createMockPath(goal: string): CustomPath {
     return {
       id: 'path-' + Date.now(),
-      name: `Path to ${goal}`,
-      targetRole: goal,
-      totalDuration: '8 weeks',
-      completionRate: 0,
-      createdAt: new Date(),
+      userId: 'mock-user',
+      title: `Path to ${goal}`,
+      targetGoal: goal,
+      learningStyle: this.learningStyle,
+      timeCommitment: this.timeCommitment,
+      progress: 0,
+      createdAt: new Date().toISOString(),
       steps: [
         {
           id: 's1',
@@ -1103,7 +1150,7 @@ export class LearningPathsComponent implements OnInit {
           duration: '12 hours',
           completed: false,
           resources: [
-            { name: `${goal} Basics`, type: 'course', url: 'https://example.com', provider: 'Coursera', cost: 'paid' }
+            { title: `${goal} Basics`, type: 'course', url: 'https://example.com', provider: 'Coursera', cost: 'paid' }
           ]
         },
         {
@@ -1113,7 +1160,7 @@ export class LearningPathsComponent implements OnInit {
           duration: '20 hours',
           completed: false,
           resources: [
-            { name: 'Project Tutorial', type: 'practice', url: 'https://example.com', provider: 'FreeCodeCamp', cost: 'free' }
+            { title: 'Project Tutorial', type: 'practice', url: 'https://example.com', provider: 'FreeCodeCamp', cost: 'free' }
           ]
         }
       ]
