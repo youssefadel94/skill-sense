@@ -1,4 +1,6 @@
 import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, from, switchMap } from 'rxjs';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
@@ -6,127 +8,119 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class ApiService {
+  private http = inject(HttpClient);
   private auth = inject(AuthService);
   private apiUrl = environment.apiUrl;
 
-  private async getHeaders(): Promise<Record<string, string>> {
-    const token = await this.auth.getIdToken();
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
+  private getAuthHeaders(): Observable<HttpHeaders> {
+    return from(this.auth.getIdToken()).pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+        if (token) {
+          headers = headers.set('Authorization', `Bearer ${token}`);
+        }
+        return [headers];
+      })
+    );
   }
 
   // Profile endpoints
-  async createProfile(data: any): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${this.apiUrl}/profiles`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data)
-    });
-    return response.json();
+  createProfile(data: any): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.post(`${this.apiUrl}/profiles`, data, { headers }))
+    );
   }
 
-  async getProfile(userId: string): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${this.apiUrl}/profiles/${userId}`, { headers });
-    return response.json();
+  getProfile(userId: string): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(`${this.apiUrl}/profiles/${userId}`, { headers }))
+    );
   }
 
-  async listProfiles(): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${this.apiUrl}/profiles`, { headers });
-    return response.json();
+  listProfiles(): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(`${this.apiUrl}/profiles`, { headers }))
+    );
   }
 
   // Skill analysis endpoints
-  async analyzeSkillGaps(userId: string, targetRole: string): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(
-      `${this.apiUrl}/profiles/${userId}/skill-gaps?targetRole=${encodeURIComponent(targetRole)}`,
-      { headers }
+  analyzeSkillGaps(userId: string, targetRole: string): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers =>
+        this.http.get(`${this.apiUrl}/profiles/${userId}/skill-gaps?targetRole=${encodeURIComponent(targetRole)}`, { headers })
+      )
     );
-    return response.json();
   }
 
-  async getSkillRecommendations(userId: string, targetRole?: string): Promise<any> {
-    const headers = await this.getHeaders();
+  getSkillRecommendations(userId: string, targetRole?: string): Observable<any> {
     const params = targetRole ? `?targetRole=${encodeURIComponent(targetRole)}` : '';
-    const response = await fetch(`${this.apiUrl}/profiles/${userId}/recommendations${params}`, { headers });
-    return response.json();
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(`${this.apiUrl}/profiles/${userId}/recommendations${params}`, { headers }))
+    );
   }
 
-  async getSkillTrends(): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${this.apiUrl}/profiles/trends`, { headers });
-    return response.json();
+  getSkillTrends(): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(`${this.apiUrl}/profiles/trends`, { headers }))
+    );
   }
 
-  async exportSkills(userId: string, format: 'json' | 'csv' = 'json'): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${this.apiUrl}/profiles/${userId}/export?format=${format}`, { headers });
-    return format === 'csv' ? response.text() : response.json();
+  exportSkills(userId: string, format: 'json' | 'csv' = 'json'): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers =>
+        this.http.get(`${this.apiUrl}/profiles/${userId}/export?format=${format}`, {
+          headers,
+          responseType: format === 'csv' ? 'text' : 'json'
+        })
+      )
+    );
   }
 
   // Extraction endpoints
-  async extractFromCV(userId: string, file: File): Promise<any> {
-    const token = await this.auth.getIdToken();
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('userId', userId);
+  extractFromCV(userId: string, file: File): Observable<any> {
+    return from(this.auth.getIdToken()).pipe(
+      switchMap(token => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('userId', userId);
 
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+        let headers = new HttpHeaders();
+        if (token) {
+          headers = headers.set('Authorization', `Bearer ${token}`);
+        }
 
-    const response = await fetch(`${this.apiUrl}/extraction/cv`, {
-      method: 'POST',
-      headers,
-      body: formData
-    });
-    return response.json();
+        return this.http.post(`${this.apiUrl}/extraction/cv`, formData, { headers });
+      })
+    );
   }
 
-  async extractFromGitHub(userId: string, username: string): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${this.apiUrl}/extraction/github`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ userId, username })
-    });
-    return response.json();
+  extractFromGitHub(userId: string, username: string): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.post(`${this.apiUrl}/extraction/github`, { userId, username }, { headers }))
+    );
   }
 
-  async extractFromLinkedIn(userId: string, profileUrl: string): Promise<any> {
-    const headers = await this.getHeaders();
-    const response = await fetch(`${this.apiUrl}/extraction/linkedin`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ userId, profileUrl })
-    });
-    return response.json();
+  extractFromLinkedIn(userId: string, profileUrl: string): Observable<any> {
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.post(`${this.apiUrl}/extraction/linkedin`, { userId, profileUrl }, { headers }))
+    );
   }
 
   // Search endpoints
-  async searchSkills(query: string, userId?: string, limit?: number): Promise<any> {
-    const headers = await this.getHeaders();
+  searchSkills(query: string, userId?: string, limit?: number): Observable<any> {
     let params = `q=${encodeURIComponent(query)}`;
     if (userId) params += `&userId=${userId}`;
     if (limit) params += `&limit=${limit}`;
 
-    const response = await fetch(`${this.apiUrl}/search/skills?${params}`, { headers });
-    return response.json();
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(`${this.apiUrl}/search/skills?${params}`, { headers }))
+    );
   }
 
-  async findSimilarProfiles(userId: string, limit?: number): Promise<any> {
-    const headers = await this.getHeaders();
+  findSimilarProfiles(userId: string, limit?: number): Observable<any> {
     const params = limit ? `?limit=${limit}` : '';
-    const response = await fetch(`${this.apiUrl}/search/similar-profiles/${userId}${params}`, { headers });
-    return response.json();
+    return this.getAuthHeaders().pipe(
+      switchMap(headers => this.http.get(`${this.apiUrl}/search/similar-profiles/${userId}${params}`, { headers }))
+    );
   }
 }
