@@ -19,6 +19,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterComponent },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'profile/:id', component: ProfileComponent, canActivate: [authGuard] },
   { path: 'upload', component: UploadComponent, canActivate: [authGuard] },
   { path: 'integrations', component: IntegrationsComponent, canActivate: [authGuard] },
   { path: 'gaps', component: SkillGapsComponent, canActivate: [authGuard] },
