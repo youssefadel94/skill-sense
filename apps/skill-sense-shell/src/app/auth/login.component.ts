@@ -12,7 +12,7 @@ import { AuthService } from '../services/auth.service';
     <div class="login-container">
       <div class="login-card">
         <h2>SkillSense Login</h2>
-        
+
         <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
           <div class="form-group">
             <label for="email">Email</label>
@@ -197,7 +197,7 @@ export class LoginComponent {
 
     try {
       await this.authService.login(this.email, this.password);
-      
+
       // Get return URL from query parameters or default to dashboard
       const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
       this.router.navigate([returnUrl]);

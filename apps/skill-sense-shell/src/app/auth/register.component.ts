@@ -13,7 +13,7 @@ import { ApiService } from '../services/api.service';
     <div class="register-container">
       <div class="register-card">
         <h2>Create Account</h2>
-        
+
         <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
           <div class="form-group">
             <label for="name">Full Name</label>
@@ -238,7 +238,7 @@ export class RegisterComponent {
     try {
       // Register user with Firebase Auth
       const user = await this.authService.register(this.email, this.password);
-      
+
       // Create profile in backend
       await this.apiService.createProfile({
         userId: user.uid,
