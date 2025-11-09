@@ -550,9 +550,9 @@ export class DashboardComponent implements OnInit {
           this.stats = {
             totalSkills: skills.length,
             profilesAnalyzed: 1, // Current user profile
-            gapsIdentified: skills.filter((s: any) => s.confidence < 70).length,
+            gapsIdentified: skills.filter((s: any) => s.confidence < 0.7).length, // Fixed: confidence is 0.0-1.0
             confidenceAverage: skills.length > 0
-              ? Math.round(skills.reduce((sum: number, s: any) => sum + (s.confidence || 0), 0) / skills.length)
+              ? Math.round((skills.reduce((sum: number, s: any) => sum + (s.confidence || 0), 0) / skills.length) * 100)
               : 0
           };
           this.loading = false;

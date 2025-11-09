@@ -378,12 +378,46 @@ export class ProfileService {
   async getLearningPaths(userId: string) {
     this.logger.log(`Fetching learning paths for user ${userId}`);
 
-    const snapshot = await this.firestore.getCollection('learning-paths')
-      .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
-      .get();
+    try {
+      const snapshot = await this.firestore.getCollection('learning-paths')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
 
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error: any) {
+      const needsIndex = error?.code === 9 && typeof error?.details === 'string'
+        && error.details.includes('requires an index');
+
+      if (!needsIndex) {
+        throw error;
+      }
+
+      this.logger.warn('Firestore index missing for learning paths. Falling back to in-memory sort.');
+
+      const snapshot = await this.firestore.getCollection('learning-paths')
+        .where('userId', '==', userId)
+        .get();
+
+      return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a: any, b: any) => {
+          const getTime = (value: any) => {
+            if (!value) {
+              return 0;
+            }
+
+            // Firestore timestamps expose toDate(); ISO strings can be parsed directly.
+            if (typeof value?.toDate === 'function') {
+              return value.toDate().getTime();
+            }
+
+            return new Date(value).getTime() || 0;
+          };
+
+          return getTime(b.createdAt) - getTime(a.createdAt);
+        });
+    }
   }
 
   async generateLearningPath(userId: string, dto: GenerateLearningPathDto) {

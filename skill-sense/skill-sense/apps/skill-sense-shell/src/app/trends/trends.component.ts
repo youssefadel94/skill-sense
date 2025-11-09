@@ -555,6 +555,8 @@ export class TrendsComponent implements OnInit, AfterViewInit {
 
   loading = true;
   error = '';
+  private viewInitialized = false;
+  private dataLoaded = false;
 
   trends: TrendData[] = [];
   categoryTrends: CategoryTrend[] = [];
@@ -584,7 +586,11 @@ export class TrendsComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // Charts will be created after data loads
+    this.viewInitialized = true;
+    // If data already loaded before view init, create charts now
+    if (this.dataLoaded) {
+      this.createCharts();
+    }
   }
 
   async loadTrends() {
@@ -613,8 +619,13 @@ export class TrendsComponent implements OnInit, AfterViewInit {
             trending: (parseFloat(item.percentage) || 0) > 20
           }));
 
-          this.createCharts();
+          this.dataLoaded = true;
           this.loading = false;
+
+          // Only create charts if view is initialized
+          if (this.viewInitialized) {
+            this.createCharts();
+          }
         },
         error: (err) => {
           console.error('Failed to load trends:', err);
@@ -636,12 +647,10 @@ export class TrendsComponent implements OnInit, AfterViewInit {
   }
 
   createCharts() {
-    // Wait for next tick to ensure canvas elements are rendered
-    setTimeout(() => {
-      this.createTopSkillsChart();
-      this.createCategoryChart();
-      this.createDemandChart();
-    }, 0);
+    // Create all charts - each method has its own null checks
+    this.createTopSkillsChart();
+    this.createCategoryChart();
+    this.createDemandChart();
   }
 
   createTopSkillsChart() {

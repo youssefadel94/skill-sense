@@ -125,8 +125,16 @@ export class ExtractionService {
         } else {
           // Update existing skill
           const existing = skillMap.get(skillName);
-          existing.confidence = Math.max(existing.confidence || 0, skill.confidence || 0.8);
-          existing.occurrences = (existing.occurrences || 1) + 1;
+          
+          // Calculate weighted average confidence based on occurrences
+          const oldOccurrences = existing.occurrences || 1;
+          const newOccurrences = oldOccurrences + 1;
+          const oldConfidence = existing.confidence || 0.8;
+          const newConfidence = skill.confidence || 0.8;
+          
+          // Weighted average: (old_confidence * old_count + new_confidence) / new_count
+          existing.confidence = ((oldConfidence * oldOccurrences) + newConfidence) / newOccurrences;
+          existing.occurrences = newOccurrences;
           
           // Merge evidence arrays
           if (!existing.evidence) {

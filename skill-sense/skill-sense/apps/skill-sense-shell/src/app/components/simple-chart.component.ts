@@ -84,7 +84,10 @@ export class SimpleChartComponent implements OnInit, AfterViewInit, OnChanges, O
   }
 
   private renderChart(): void {
-    if (!this.canvasRef) return;
+    if (!this.canvasRef?.nativeElement) {
+      console.warn('[SimpleChart] Canvas element not ready');
+      return;
+    }
 
     // Destroy existing chart
     if (this.chart) {
