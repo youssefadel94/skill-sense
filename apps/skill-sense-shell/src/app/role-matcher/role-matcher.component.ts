@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
 import { AuthService } from '../services/auth.service';
+import { SimpleChartComponent } from '../components/simple-chart.component';
 
 interface JobMatch {
   id: string;
@@ -31,7 +32,7 @@ interface MatchAnalysis {
 @Component({
   selector: 'app-role-matcher',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, SimpleChartComponent],
   template: `
     <div class="role-matcher-container">
       <header class="page-header">
@@ -246,6 +247,17 @@ interface MatchAnalysis {
 
               <div class="modal-body">
                 <h4>{{ selectedMatch.title }} at {{ selectedMatch.company }}</h4>
+
+                <!-- Match Breakdown Chart -->
+                <div class="chart-section">
+                  <h5>📊 Match Breakdown</h5>
+                  <app-simple-chart
+                    type="bar"
+                    [data]="getMatchBreakdownData(selectedMatch)"
+                    dataLabel="Score %"
+                    style="height: 250px;"
+                  ></app-simple-chart>
+                </div>
 
                 <div class="analysis-section">
                   <h5>💪 Your Strengths</h5>
@@ -763,6 +775,19 @@ interface MatchAnalysis {
       color: #333;
     }
 
+    .chart-section {
+      margin-bottom: 30px;
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .chart-section h5 {
+      margin: 0 0 16px 0;
+      color: #333;
+      font-size: 16px;
+    }
+
     .analysis-section {
       margin-bottom: 24px;
     }
@@ -895,30 +920,51 @@ export class RoleMatcherComponent implements OnInit {
       this.hasSearched = true;
       this.error = '';
 
-      // TODO: Replace with actual API call
-      // this.apiService.matchRoles({
-      //   query: this.searchQuery,
-      //   location: this.location,
-      //   minScore: this.minMatchScore
-      // }).subscribe({
-      //   next: (matches) => { this.matches = matches; },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.searching = false; }
-      // });
+      const userId = this.auth.getUserId();
+      if (!userId) {
+        this.error = 'Please log in to search for roles';
+        this.searching = false;
+        return;
+      }
 
-      await this.delay(1500);
-      this.matches = this.generateMockMatches();
+      this.apiService.matchRoles(userId, {
+        query: this.searchQuery,
+        location: this.location,
+        minScore: this.minMatchScore,
+        sortBy: this.sortBy
+      }).subscribe({
+        next: (matches) => {
+          this.matches = matches;
+          this.searching = false;
+        },
+        error: (err) => {
+          this.error = err.message || 'Failed to search roles';
+          this.searching = false;
+        }
+      });
 
     } catch (err: any) {
       this.error = err.message || 'Failed to search roles';
-    } finally {
       this.searching = false;
     }
   }
 
-  viewDetails(match: JobMatch) {
+  async viewDetails(match: JobMatch) {
     this.selectedMatch = match;
-    this.analysisData = this.generateAnalysis(match);
+
+    const userId = this.auth.getUserId();
+    if (userId && match.id) {
+      // Fetch detailed analysis from API
+      this.apiService.getJobMatchAnalysis(userId, match.id).subscribe({
+        next: (analysis) => { this.analysisData = analysis; },
+        error: (err) => {
+          console.error('Failed to load match analysis:', err);
+          this.analysisData = this.generateAnalysis(match);
+        }
+      });
+    } else {
+      this.analysisData = this.generateAnalysis(match);
+    }
   }
 
   closeDetails() {
@@ -940,6 +986,14 @@ export class RoleMatcherComponent implements OnInit {
     if (days < 7) return `${days} days ago`;
     if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
     return `${Math.floor(days / 30)} months ago`;
+  }
+
+  getMatchBreakdownData(match: JobMatch) {
+    return [
+      { label: 'Overall Match', value: match.matchScore },
+      { label: 'Skills Match', value: match.skillsMatch },
+      { label: 'Experience Match', value: match.experienceMatch }
+    ];
   }
 
   private generateAnalysis(match: JobMatch): MatchAnalysis {

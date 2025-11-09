@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Delete, Query, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ProfileService } from './profile.service';
 import { CreateProfileDto } from './dto/profile.dto';
+import { GenerateCVDto, MatchRolesDto, GenerateLearningPathDto, UpdateLearningPathProgressDto } from './dto/advanced.dto';
 
 @ApiTags('profiles')
 @Controller('profiles')
@@ -110,5 +111,104 @@ export class ProfileController {
       )
       .join('\n');
     return headers + rows;
+  }
+
+  // ==================== CV GENERATION ====================
+  
+  @Post(':id/cv/generate')
+  @ApiOperation({ summary: 'Generate AI-powered CV/Resume' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 201, description: 'CV generated successfully' })
+  async generateCV(@Param('id') userId: string, @Body() dto: GenerateCVDto) {
+    return this.profileService.generateCV(userId, dto);
+  }
+
+  @Get(':id/cv/recent')
+  @ApiOperation({ summary: 'Get recently generated CVs' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Maximum results (default: 10)' })
+  @ApiResponse({ status: 200, description: 'Returns recent CVs' })
+  async getRecentCVs(@Param('id') userId: string, @Query('limit') limit: number = 10) {
+    return this.profileService.getRecentCVs(userId, limit);
+  }
+
+  @Get('cv/:cvId/download')
+  @ApiOperation({ summary: 'Download generated CV' })
+  @ApiParam({ name: 'cvId', description: 'CV ID' })
+  @ApiResponse({ status: 200, description: 'Returns CV file' })
+  async downloadCV(@Param('cvId') cvId: string, @Res() res: Response) {
+    const cv = await this.profileService.getCVById(cvId);
+    
+    if (!cv) {
+      return res.status(404).json({ error: 'CV not found' });
+    }
+
+    // Mock file download - in production, this would return the actual file
+    const content = `# CV - ${cv.template}\n\nGenerated on ${cv.generatedAt}\n\n...CV Content...`;
+    
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="cv-${cvId}.${cv.format}"`);
+    return res.send(Buffer.from(content));
+  }
+
+  // ==================== ROLE MATCHING ====================
+  
+  @Post(':id/roles/match')
+  @ApiOperation({ summary: 'Match job roles based on skills' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Returns matched roles' })
+  async matchRoles(@Param('id') userId: string, @Body() dto: MatchRolesDto) {
+    return this.profileService.matchRoles(userId, dto);
+  }
+
+  @Get(':id/roles/:jobId/analysis')
+  @ApiOperation({ summary: 'Get detailed job match analysis' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'jobId', description: 'Job ID' })
+  @ApiResponse({ status: 200, description: 'Returns match analysis' })
+  async getJobMatchAnalysis(@Param('id') userId: string, @Param('jobId') jobId: string) {
+    return this.profileService.getJobMatchAnalysis(userId, jobId);
+  }
+
+  // ==================== LEARNING PATHS ====================
+  
+  @Get(':id/learning-paths')
+  @ApiOperation({ summary: 'Get user learning paths' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Returns learning paths' })
+  async getLearningPaths(@Param('id') userId: string) {
+    return this.profileService.getLearningPaths(userId);
+  }
+
+  @Post(':id/learning-paths/generate')
+  @ApiOperation({ summary: 'Generate personalized learning path' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 201, description: 'Learning path generated' })
+  async generateLearningPath(@Param('id') userId: string, @Body() dto: GenerateLearningPathDto) {
+    return this.profileService.generateLearningPath(userId, dto);
+  }
+
+  @Put(':id/learning-paths/:pathId/progress/:stepId')
+  @ApiOperation({ summary: 'Update learning path step progress' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'pathId', description: 'Learning path ID' })
+  @ApiParam({ name: 'stepId', description: 'Step ID' })
+  @ApiResponse({ status: 200, description: 'Progress updated' })
+  async updateLearningPathProgress(
+    @Param('id') userId: string,
+    @Param('pathId') pathId: string,
+    @Param('stepId') stepId: string,
+    @Body() dto: UpdateLearningPathProgressDto,
+  ) {
+    return this.profileService.updateLearningPathProgress(userId, pathId, stepId, dto.completed);
+  }
+
+  @Delete(':id/learning-paths/:pathId')
+  @ApiOperation({ summary: 'Delete learning path' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'pathId', description: 'Learning path ID' })
+  @ApiResponse({ status: 200, description: 'Learning path deleted' })
+  async deleteLearningPath(@Param('id') userId: string, @Param('pathId') pathId: string) {
+    return this.profileService.deleteLearningPath(userId, pathId);
   }
 }

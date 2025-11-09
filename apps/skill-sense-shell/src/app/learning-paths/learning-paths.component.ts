@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../services/api.service';
+import { AuthService } from '../services/auth.service';
+import { SimpleChartComponent } from '../components/simple-chart.component';
 import type { LearningPath, SkillGap } from '../models';
 
 interface PathStep {
@@ -33,7 +35,7 @@ interface CustomPath {
 @Component({
   selector: 'app-learning-paths',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, SimpleChartComponent],
   template: `
     <div class="learning-paths-container">
       <header class="page-header">
@@ -172,6 +174,17 @@ interface CustomPath {
               </div>
 
               <div class="modal-body">
+                <!-- Progress Visualization -->
+                <div class="chart-section">
+                  <h4>📊 Progress Overview</h4>
+                  <app-simple-chart
+                    type="pie"
+                    [data]="getProgressChartData(selectedPath)"
+                    dataLabel="Steps"
+                    style="height: 250px; margin-bottom: 20px;"
+                  ></app-simple-chart>
+                </div>
+
                 <!-- Progress Overview -->
                 <div class="progress-overview">
                   <div class="progress-stat">
@@ -845,6 +858,7 @@ interface CustomPath {
 })
 export class LearningPathsComponent implements OnInit {
   private apiService = inject(ApiService);
+  private authService = inject(AuthService);
 
   loading = false;
   error = '';
@@ -852,7 +866,7 @@ export class LearningPathsComponent implements OnInit {
   generating = false;
 
   targetGoal = '';
-  learningStyle = 'balanced';
+  learningStyle: 'balanced' | 'practical' | 'theoretical' | 'fast' = 'balanced';
   timeCommitment = 10;
 
   activePaths: CustomPath[] = [];
@@ -887,31 +901,34 @@ export class LearningPathsComponent implements OnInit {
   async generatePath() {
     if (!this.targetGoal) return;
 
-    try {
-      this.generating = true;
-      this.error = '';
+    this.generating = true;
+    this.error = '';
 
-      // TODO: Replace with actual API call
-      // this.apiService.generateLearningPath({
-      //   targetGoal: this.targetGoal,
-      //   learningStyle: this.learningStyle,
-      //   timeCommitment: this.timeCommitment
-      // }).subscribe({
-      //   next: (path) => { this.activePaths.push(path); },
-      //   error: (err) => { this.error = err.message; },
-      //   complete: () => { this.generating = false; }
-      // });
-
-      await this.delay(2000);
-      const newPath = this.createMockPath(this.targetGoal);
-      this.activePaths.unshift(newPath);
-      this.targetGoal = '';
-
-    } catch (err: any) {
-      this.error = err.message || 'Failed to generate learning path';
-    } finally {
+    const userId = this.authService.getUserId();
+    if (!userId) {
+      this.error = 'Please login to generate learning paths';
       this.generating = false;
+      return;
     }
+
+    const config = {
+      targetGoal: this.targetGoal,
+      learningStyle: this.learningStyle,
+      timeCommitment: this.timeCommitment
+    };
+
+    this.apiService.generateLearningPath(userId, config).subscribe({
+      next: (path) => {
+        this.activePaths.unshift(path);
+        this.targetGoal = '';
+        this.generating = false;
+      },
+      error: (err) => {
+        console.error('Failed to generate learning path:', err);
+        this.error = err.message || 'Failed to generate learning path';
+        this.generating = false;
+      }
+    });
   }
 
   selectPath(path: CustomPath) {
@@ -930,10 +947,31 @@ export class LearningPathsComponent implements OnInit {
   }
 
   toggleStepCompletion(step: PathStep) {
-    step.completed = !step.completed;
-    if (this.selectedPath) {
-      this.updatePathCompletion(this.selectedPath);
+    if (!this.selectedPath) return;
+
+    const userId = this.authService.getUserId();
+    if (!userId) {
+      console.error('User not authenticated');
+      return;
     }
+
+    const newCompletedState = !step.completed;
+
+    this.apiService.updateLearningPathProgress(
+      userId,
+      this.selectedPath.id,
+      step.id,
+      newCompletedState
+    ).subscribe({
+      next: () => {
+        step.completed = newCompletedState;
+        this.updatePathCompletion(this.selectedPath!);
+      },
+      error: (err) => {
+        console.error('Failed to update step completion:', err);
+        // Optionally show error to user
+      }
+    });
   }
 
   getCompletedSteps(path: CustomPath): number {
@@ -952,6 +990,15 @@ export class LearningPathsComponent implements OnInit {
     const days = Math.ceil(totalHours / 8);
     if (days < 7) return `${days} days`;
     return `${Math.ceil(days / 7)} weeks`;
+  }
+
+  getProgressChartData(path: CustomPath) {
+    const completed = this.getCompletedSteps(path);
+    const remaining = path.steps.length - completed;
+    return [
+      { label: 'Completed', value: completed },
+      { label: 'Remaining', value: remaining }
+    ];
   }
 
   getResourceIcon(type: string): string {

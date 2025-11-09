@@ -27,26 +27,26 @@ export class ApiService {
   // Profile endpoints
   createProfile(data: any): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.post(`${this.apiUrl}/profiles`, data, { headers }))
+      switchMap((headers) => this.http.post(`${this.apiUrl}/profiles`, data, { headers }))
     );
   }
 
   getProfile(userId: string): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}`, { headers }))
     );
   }
 
   listProfiles(): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles`, { headers }))
     );
   }
 
   // Skill analysis endpoints
   analyzeSkillGaps(userId: string, targetRole: string): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/skill-gaps?targetRole=${encodeURIComponent(targetRole)}`, { headers })
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/skill-gaps?targetRole=${encodeURIComponent(targetRole)}`, { headers })
       )
     );
   }
@@ -54,22 +54,22 @@ export class ApiService {
   getSkillRecommendations(userId: string, targetRole?: string): Observable<any> {
     const params = targetRole ? `?targetRole=${encodeURIComponent(targetRole)}` : '';
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/recommendations${params}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/recommendations${params}`, { headers }))
     );
   }
 
   getSkillTrends(): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/trends`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/trends`, { headers }))
     );
   }
 
   exportSkills(userId: string, format: 'json' | 'csv' = 'json'): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/export?format=${format}`, {
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/export?format=${format}`, {
           headers,
           responseType: format === 'csv' ? 'text' : 'json'
-        })
+        } as any)
       )
     );
   }
@@ -94,13 +94,13 @@ export class ApiService {
 
   extractFromGitHub(userId: string, username: string): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.post(`${this.apiUrl}/extraction/github`, { userId, username }, { headers }))
+      switchMap((headers) => this.http.post(`${this.apiUrl}/extraction/github`, { userId, username }, { headers }))
     );
   }
 
   extractFromLinkedIn(userId: string, profileUrl: string): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.post(`${this.apiUrl}/extraction/linkedin`, { userId, profileUrl }, { headers }))
+      switchMap((headers) => this.http.post(`${this.apiUrl}/extraction/linkedin`, { userId, profileUrl }, { headers }))
     );
   }
 
@@ -111,14 +111,14 @@ export class ApiService {
     if (limit) params += `&limit=${limit}`;
 
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/search/skills?${params}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/search/skills?${params}`, { headers }))
     );
   }
 
   findSimilarProfiles(userId: string, limit?: number): Observable<any> {
     const params = limit ? `?limit=${limit}` : '';
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/search/similar-profiles/${userId}${params}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/search/similar-profiles/${userId}${params}`, { headers }))
     );
   }
 
@@ -137,19 +137,19 @@ export class ApiService {
     emphasisCategories?: string[];
   }): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.post(`${this.apiUrl}/profiles/${userId}/cv/generate`, config, { headers }))
+      switchMap((headers) => this.http.post(`${this.apiUrl}/profiles/${userId}/cv/generate`, config, { headers }))
     );
   }
 
   getRecentCVs(userId: string, limit: number = 10): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/cv/recent?limit=${limit}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/cv/recent?limit=${limit}`, { headers }))
     );
   }
 
   downloadCV(cvId: string): Observable<Blob> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/cv/${cvId}/download`, {
+      switchMap((headers) => this.http.get(`${this.apiUrl}/cv/${cvId}/download`, {
           headers,
           responseType: 'blob'
         }))
@@ -171,20 +171,20 @@ export class ApiService {
 
     const queryString = params.toString() ? `?${params.toString()}` : '';
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/match-roles${queryString}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/match-roles${queryString}`, { headers }))
     );
   }
 
   getJobMatchAnalysis(userId: string, jobId: string): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/match-analysis/${jobId}`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/match-analysis/${jobId}`, { headers }))
     );
   }
 
   // Learning Paths endpoints
   getLearningPaths(userId: string): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/learning-paths`, { headers }))
+      switchMap((headers) => this.http.get(`${this.apiUrl}/profiles/${userId}/learning-paths`, { headers }))
     );
   }
 
@@ -194,13 +194,13 @@ export class ApiService {
     timeCommitment: number;
   }): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.post(`${this.apiUrl}/profiles/${userId}/learning-paths/generate`, config, { headers }))
+      switchMap((headers) => this.http.post(`${this.apiUrl}/profiles/${userId}/learning-paths/generate`, config, { headers }))
     );
   }
 
   updateLearningPathProgress(userId: string, pathId: string, stepId: string, completed: boolean): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.patch(
+      switchMap((headers) => this.http.patch(
           `${this.apiUrl}/profiles/${userId}/learning-paths/${pathId}/steps/${stepId}`,
           { completed },
           { headers }
@@ -210,7 +210,7 @@ export class ApiService {
 
   deleteLearningPath(userId: string, pathId: string): Observable<any> {
     return this.getAuthHeaders().pipe(
-      switchMap(async (headers) => this.http.delete(`${this.apiUrl}/profiles/${userId}/learning-paths/${pathId}`, { headers }))
+      switchMap((headers) => this.http.delete(`${this.apiUrl}/profiles/${userId}/learning-paths/${pathId}`, { headers }))
     );
   }
 }
